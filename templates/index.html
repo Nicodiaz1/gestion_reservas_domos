@@ -90,12 +90,16 @@
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="fechaInicio">Fecha de Entrada</label>
-                        <input type="date" id="fechaInicio" required class="input">
+                        <label>Fecha de Entrada</label>
+                        <div id="calendario-inicio" class="calendario-container"></div>
+                        <input type="hidden" id="fechaInicio" required>
+                        <p id="fechaInicio-display" class="fecha-display">Seleccionar fecha</p>
                     </div>
                     <div class="form-group">
-                        <label for="fechaFin">Fecha de Salida</label>
-                        <input type="date" id="fechaFin" required class="input">
+                        <label>Fecha de Salida</label>
+                        <div id="calendario-fin" class="calendario-container"></div>
+                        <input type="hidden" id="fechaFin" required>
+                        <p id="fechaFin-display" class="fecha-display">Seleccionar fecha</p>
                     </div>
                 </div>
 

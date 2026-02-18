@@ -1,6 +1,9 @@
 // ==================== VARIABLES GLOBALES ====================
 let domos = [];
 let selectedDomo = null;
+let fechasOcupadas = [];
+let calendario_inicio_mes = new Date();
+let calendario_fin_mes = new Date();
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -92,21 +95,112 @@ async function abrirReserva(domoId) {
     try {
         const res = await fetch(`/api/disponibilidad/${domoId}`);
         const data = await res.json();
-        const fechasOcupadas = data.ocupadas || [];
-        
-        // Deshabilitar fechas ocupadas en inputs
-        const fechaInicioInput = document.getElementById('fechaInicio');
-        const fechaFinInput = document.getElementById('fechaFin');
-        
-        // Aplicar atributo de fechas deshabilitadas
-        const ocupadasStr = fechasOcupadas.join(',');
-        fechaInicioInput.setAttribute('data-unavailable', ocupadasStr);
-        fechaFinInput.setAttribute('data-unavailable', ocupadasStr);
+        fechasOcupadas = data.ocupadas || [];
     } catch (error) {
         console.error('Error cargando disponibilidad:', error);
+        fechasOcupadas = [];
     }
     
+    // Inicializar calendarios
+    calendario_inicio_mes = new Date();
+    calendario_fin_mes = new Date();
+    calendario_fin_mes.setMonth(calendario_fin_mes.getMonth() + 1);
+    
+    construirCalendario('inicio');
+    construirCalendario('fin');
+    
     document.getElementById('reservaModal').style.display = 'block';
+}
+
+// ==================== CONSTRUIR CALENDARIO ====================
+function construirCalendario(tipo) {
+    const mes = tipo === 'inicio' ? calendario_inicio_mes : calendario_fin_mes;
+    const container = document.getElementById(`calendario-${tipo}`);
+    
+    container.innerHTML = `
+        <div class="calendario-header">
+            <button type="button" onclick="cambiarMes('${tipo}', -1)">← Anterior</button>
+            <h3>${mes.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h3>
+            <button type="button" onclick="cambiarMes('${tipo}', 1)">Siguiente →</button>
+        </div>
+        <div class="calendario-weekdays">
+            <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
+        </div>
+        <div class="calendario-days" id="dias-${tipo}"></div>
+    `;
+    
+    // Llenar días
+    const primerDia = new Date(mes.getFullYear(), mes.getMonth(), 1);
+    const ultimoDia = new Date(mes.getFullYear(), mes.getMonth() + 1, 0);
+    const diasContainer = document.getElementById(`dias-${tipo}`);
+    
+    // Días del mes anterior
+    const inicioDia = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
+    for (let i = inicioDia - 1; i >= 0; i--) {
+        const fecha = new Date(primerDia);
+        fecha.setDate(fecha.getDate() - i - 1);
+        const btn = document.createElement('button');
+        btn.className = 'calendario-day otro-mes';
+        btn.textContent = fecha.getDate();
+        btn.type = 'button';
+        btn.disabled = true;
+        diasContainer.appendChild(btn);
+    }
+    
+    // Días del mes actual
+    for (let d = 1; d <= ultimoDia.getDate(); d++) {
+        const fecha = new Date(mes.getFullYear(), mes.getMonth(), d);
+        const fechaStr = fecha.toISOString().split('T')[0];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = d;
+        btn.className = 'calendario-day';
+        
+        const estaOcupada = fechasOcupadas.includes(fechaStr);
+        if (estaOcupada) {
+            btn.classList.add('reserved');
+            btn.disabled = true;
+        }
+        
+        btn.onclick = () => seleccionarFecha(tipo, fechaStr, !estaOcupada);
+        diasContainer.appendChild(btn);
+    }
+    
+    // Días del mes siguiente
+    const diasRestantes = 7 - ((inicioDia + ultimoDia.getDate()) % 7);
+    if (diasRestantes < 7) {
+        for (let i = 1; i <= diasRestantes; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'calendario-day otro-mes';
+            btn.textContent = i;
+            btn.type = 'button';
+            btn.disabled = true;
+            diasContainer.appendChild(btn);
+        }
+    }
+}
+
+// ==================== CAMBIAR MES ====================
+function cambiarMes(tipo, incremento) {
+    if (tipo === 'inicio') {
+        calendario_inicio_mes.setMonth(calendario_inicio_mes.getMonth() + incremento);
+    } else {
+        calendario_fin_mes.setMonth(calendario_fin_mes.getMonth() + incremento);
+    }
+    construirCalendario(tipo);
+}
+
+// ==================== SELECCIONAR FECHA ====================
+function seleccionarFecha(tipo, fechaStr, permitido) {
+    if (!permitido) return;
+    
+    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}`).value = fechaStr;
+    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}-display`).textContent = new Date(fechaStr).toLocaleDateString('es-ES');
+    
+    // Resaltar fecha seleccionada
+    construirCalendario(tipo);
+    validarFechasReservadas();
+    calcularPrecio();
 }
 
 // ==================== CERRAR MODAL ====================
@@ -140,22 +234,20 @@ function setupFormListeners() {
 
 // ==================== VALIDAR FECHAS RESERVADAS ====================
 function validarFechasReservadas() {
-    const fechaInicio = document.getElementById('fechaInicio');
-    const fechaFin = document.getElementById('fechaFin');
-    const ocupadasStr = fechaInicio.getAttribute('data-unavailable') || '';
-    const ocupadas = ocupadasStr ? ocupadasStr.split(',') : [];
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
     
-    if (!fechaInicio.value || !fechaFin.value) return;
+    if (!fechaInicio || !fechaFin) return;
     
-    const inicio = new Date(fechaInicio.value);
-    const fin = new Date(fechaFin.value);
+    const inicio = new Date(fechaInicio);
+    const fin = new Date(fechaFin);
     
     let fechaActual = new Date(inicio);
     let hayConflicto = false;
     
     while (fechaActual <= fin) {
         const fechaStr = fechaActual.toISOString().split('T')[0];
-        if (ocupadas.includes(fechaStr)) {
+        if (fechasOcupadas.includes(fechaStr)) {
             hayConflicto = true;
             break;
         }
@@ -163,12 +255,7 @@ function validarFechasReservadas() {
     }
     
     if (hayConflicto) {
-        fechaInicio.style.borderColor = '#f44336';
-        fechaFin.style.borderColor = '#f44336';
         mostrarError('Algunas fechas seleccionadas ya están reservadas (se muestran en rojo)');
-    } else {
-        fechaInicio.style.borderColor = '';
-        fechaFin.style.borderColor = '';
     }
 }
 
@@ -213,8 +300,8 @@ async function enviarReserva(e) {
     
     const email = document.getElementById('emailCliente').value.trim();
     const telefono = document.getElementById('telefonoCliente').value.trim();
-    const fechaInicio = document.getElementById('fechaInicio');
-    const fechaFin = document.getElementById('fechaFin');
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
     
     // Validar teléfono
     if (!telefono) {
@@ -228,16 +315,16 @@ async function enviarReserva(e) {
         return;
     }
     
-    // Verificar que no haya fechas en rojo (reservadas)
-    if (fechaInicio.style.borderColor === 'rgb(244, 67, 54)' || fechaFin.style.borderColor === 'rgb(244, 67, 54)') {
-        mostrarError('No puedes reservar fechas que ya están ocupadas');
+    // Verificar que las fechas estén completas
+    if (!fechaInicio || !fechaFin) {
+        mostrarError('Debes seleccionar ambas fechas');
         return;
     }
     
     const datos = {
         domo_id: parseInt(document.getElementById('domoId').value),
-        fecha_inicio: document.getElementById('fechaInicio').value,
-        fecha_fin: document.getElementById('fechaFin').value,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
         nombre_cliente: document.getElementById('nombreCliente').value,
         email_cliente: email,
         telefono_cliente: telefono

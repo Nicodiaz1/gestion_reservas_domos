@@ -1072,6 +1072,111 @@ input[type="date"]:invalid {
     color: #f44336;
 }
 
+/* ==================== CALENDARIO PERSONALIZADO ==================== */
+.calendario-container {
+    background: white;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.calendario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.calendario-header button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.calendario-header button:hover {
+    background: var(--primary-light);
+}
+
+.calendario-header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: var(--primary);
+}
+
+.calendario-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 12px;
+    color: var(--primary);
+}
+
+.calendario-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendario-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background: white;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+}
+
+.calendario-day:hover:not(.disabled):not(.otro-mes) {
+    background: var(--accent);
+    color: white;
+}
+
+.calendario-day.otro-mes {
+    color: #ccc;
+    cursor: default;
+    background: #f9f9f9;
+}
+
+.calendario-day.selected {
+    background: var(--primary);
+    color: white;
+    font-weight: bold;
+}
+
+.calendario-day.reserved {
+    background: #f44336;
+    color: white;
+    font-weight: bold;
+}
+
+.calendario-day.disabled {
+    background: #f44336;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.fecha-display {
+    padding: 8px 12px;
+    background: var(--light);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--primary);
+    margin: 8px 0 0 0;
+}
+
 @media (max-width: 480px) {
     body {
         padding: 10px;
