@@ -344,10 +344,10 @@ def crear_reserva():
         sql_insert = text("""
             INSERT INTO reservas (
                 domo_id, nombre_cliente, email_cliente, telefono_cliente,
-                fecha_inicio, fecha_fin, cantidad_noches, precio_total, estado, fecha_creacion
+                fecha_inicio, fecha_fin, precio_total, estado, fecha_creacion
             ) VALUES (
                 :domo_id, :nombre_cliente, :email, :telefono,
-                :fecha_inicio, :fecha_fin, :cantidad_noches, :precio_total, 'confirmada', :fecha_creacion
+                :fecha_inicio, :fecha_fin, :precio_total, 'confirmada', :fecha_creacion
             )
         """)
         
@@ -358,7 +358,6 @@ def crear_reserva():
             'telefono': telefono,
             'fecha_inicio': fecha_inicio,
             'fecha_fin': fecha_fin,
-            'cantidad_noches': cantidad_noches,
             'precio_total': int(precio_con_descuento),
             'fecha_creacion': datetime.utcnow()
         })
