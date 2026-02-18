@@ -306,14 +306,16 @@ def crear_reserva():
         if not domo:
             return jsonify({'error': 'Domo no encontrado'}), 404
         
+        cantidad_noches = (fecha_fin - fecha_inicio).days
+        
         # Insertar reserva usando SQL raw para compatibilidad
         sql_insert = text("""
             INSERT INTO reservas (
                 domo_id, nombre_cliente, email, telefono,
-                fecha_inicio, fecha_fin, estado, fecha_creacion
+                fecha_inicio, fecha_fin, cantidad_noches, estado, fecha_creacion
             ) VALUES (
                 :domo_id, :nombre_cliente, :email, :telefono,
-                :fecha_inicio, :fecha_fin, 'confirmada', :fecha_creacion
+                :fecha_inicio, :fecha_fin, :cantidad_noches, 'confirmada', :fecha_creacion
             )
         """)
         
@@ -324,6 +326,7 @@ def crear_reserva():
             'telefono': telefono,
             'fecha_inicio': fecha_inicio,
             'fecha_fin': fecha_fin,
+            'cantidad_noches': cantidad_noches,
             'fecha_creacion': datetime.utcnow()
         })
         
