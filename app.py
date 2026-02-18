@@ -219,7 +219,8 @@ def calcular_precio():
     while fecha_actual < fecha_fin:
         # Verificar si es feriado o fin de semana
         es_feriado = fecha_actual in feriados
-        es_fin_semana = fecha_actual.weekday() >= 5  # Sábado=5, Domingo=6
+        # Viernes=4, Sábado=5, Domingo=6
+        es_fin_semana = fecha_actual.weekday() >= 4
         
         if es_feriado or es_fin_semana:
             precio_total += domo.precio_fin_semana
@@ -256,41 +257,59 @@ def crear_reserva():
     try:
         fecha_inicio = datetime.strptime(data['fecha_inicio'], '%Y-%m-%d').date()
         fecha_fin = datetime.strptime(data['fecha_fin'], '%Y-%m-%d').date()
-    except:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Formato de fecha inválido: {str(e)}'}), 400
     
     # Verificar disponibilidad
-    conflicto = Reserva.query.filter(
-        Reserva.domo_id == data['domo_id'],
-        Reserva.estado == 'confirmada',
-        Reserva.fecha_inicio <= fecha_fin,
-        Reserva.fecha_fin >= fecha_inicio
-    ).first()
+    try:
+        conflicto = Reserva.query.filter(
+            Reserva.domo_id == data['domo_id'],
+            Reserva.estado == 'confirmada',
+            Reserva.fecha_inicio <= fecha_fin,
+            Reserva.fecha_fin >= fecha_inicio
+        ).first()
+        
+        if conflicto:
+            return jsonify({'error': 'Estas fechas no están disponibles'}), 409
+    except Exception as e:
+        return jsonify({'error': f'Error verificando disponibilidad: {str(e)}'}), 500
     
-    if conflicto:
-        return jsonify({'error': 'Estas fechas no están disponibles'}), 409
+    # Validar que al menos email o teléfono estén presentes
+    email = data.get('email_cliente', '').strip()
+    telefono = data.get('telefono_cliente', '').strip()
     
-    domo = Domo.query.get(data['domo_id'])
-    cantidad_noches = (fecha_fin - fecha_inicio).days
+    if not email and not telefono:
+        return jsonify({'error': 'Debes proporcionar al menos email o teléfono'}), 400
     
-    reserva = Reserva(
-        domo_id=data['domo_id'],
-        nombre_cliente=data['nombre_cliente'],
-        email_cliente=data.get('email_cliente', ''),
-        telefono_cliente=data.get('telefono_cliente', ''),
-        fecha_inicio=fecha_inicio,
-        fecha_fin=fecha_fin,
-        estado='confirmada'
-    )
-    
-    db.session.add(reserva)
-    db.session.commit()
-    
-    return jsonify({
-        'success': True,
-        'mensaje': 'Reserva creada exitosamente',
-        'reserva_id': reserva.id
-    }), 201
+    try:
+        domo = Domo.query.get(data['domo_id'])
+        if not domo:
+            return jsonify({'error': 'Domo no encontrado'}), 404
+        
+        cantidad_noches = (fecha_fin - fecha_inicio).days
+        
+        reserva = Reserva(
+            domo_id=data['domo_id'],
+            nombre_cliente=data['nombre_cliente'],
+            email_cliente=email,
+            telefono_cliente=telefono,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            estado='confirmada'
+        )
+        
+        db.session.add(reserva)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'mensaje': 'Reserva creada exitosamente',
+            'reserva_id': reserva.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error al crear reserva: {str(e)}'}), 500
 
 # ==================== RUTAS ADMIN ====================
 
