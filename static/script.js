@@ -178,6 +178,11 @@ function construirCalendario() {
         if (esPasada) {
             btn.classList.add('pasada');
             btn.disabled = true;
+        } else if (estaOcupada) {
+            btn.classList.add('reserved');
+            // Permitir seleccionar ocupadas, la validación se hace en la función
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else if (esInicioReserva) {
             // Fechas de inicio de reserva: mostrar con dos colores invertidos
             btn.classList.add('checkin');
@@ -186,11 +191,6 @@ function construirCalendario() {
         } else if (esCheckout) {
             // Fechas de checkout: se pueden usar como fecha_inicio
             btn.classList.add('checkout');
-            btn.disabled = false;
-            btn.onclick = () => seleccionarFechaRango(fechaStr);
-        } else if (estaOcupada) {
-            btn.classList.add('reserved');
-            // Permitir seleccionar ocupadas, la validación se hace en la función
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else {
