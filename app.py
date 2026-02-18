@@ -63,6 +63,22 @@ def index():
     domos = Domo.query.all()
     return render_template('index.html', domos=domos)
 
+@app.route('/api/domos')
+def get_domos():
+    """Retorna la lista de domos en formato JSON"""
+    domos = Domo.query.all()
+    resultado = []
+    for domo in domos:
+        resultado.append({
+            'id': domo.id,
+            'nombre': domo.nombre,
+            'descripcion': domo.descripcion,
+            'capacidad': domo.capacidad,
+            'precio_semana': domo.precio_semana,
+            'precio_fin_semana': domo.precio_fin_semana
+        })
+    return jsonify(resultado), 200
+
 @app.route('/api/disponibilidad/<int:domo_id>')
 def get_disponibilidad(domo_id):
     """Retorna las fechas ocupadas de un domo"""
@@ -130,10 +146,10 @@ def calcular_precio():
     precio_con_descuento = precio_total * (1 - descuento)
     
     return jsonify({
-        'precio_original': precio_total,
-        'descuento_porcentaje': descuento * 100,
-        'precio_final': precio_con_descuento,
-        'cantidad_noches': cantidad_noches
+        'precio_base': precio_total,
+        'descuento': int(precio_total - precio_con_descuento),
+        'precio_total': int(precio_con_descuento),
+        'noches': cantidad_noches
     }), 200
 
 @app.route('/api/crear-reserva', methods=['POST'])
