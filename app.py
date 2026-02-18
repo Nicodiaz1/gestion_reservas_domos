@@ -115,6 +115,20 @@ def crear_feriados_argentina():
 # Inicializar al crear la app
 init_db()
 
+@app.route('/migrate-db', methods=['POST'])
+def migrate_db():
+    """Migra la base de datos a la nueva estructura"""
+    try:
+        with app.app_context():
+            # Recrear todas las tablas con la nueva estructura
+            db.drop_all()
+            db.create_all()
+            crear_domos_defecto()
+            crear_feriados_argentina()
+        return jsonify({'mensaje': 'Base de datos migrada exitosamente'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/init-db', methods=['POST'])
 def init_db_route():
     """Inicializa la base de datos con datos de ejemplo"""

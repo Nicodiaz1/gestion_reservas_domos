@@ -58,12 +58,12 @@ function crearTarjetaDomo(domo) {
             
             <div class="price-section">
                 <div class="price-row">
-                    <span class="price-label">Lun-Vie:</span>
-                    <span class="price-value">$${domo.precio_semana}/noche</span>
+                    <span class="price-label">Lun-Jue:</span>
+                    <span class="price-value">$${domo.precio_semana.toLocaleString()}/noche</span>
                 </div>
                 <div class="price-row">
-                    <span class="price-label">Sáb-Dom:</span>
-                    <span class="price-value">$${domo.precio_fin_semana}/noche</span>
+                    <span class="price-label">Vie-Dom:</span>
+                    <span class="price-value">$${domo.precio_fin_semana.toLocaleString()}/noche</span>
                 </div>
             </div>
             
