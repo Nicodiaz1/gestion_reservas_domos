@@ -194,8 +194,8 @@ def calcular_precio():
     try:
         fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
         fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
-    except:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Formato de fecha inválido: {str(e)}'}), 400
     
     domo = Domo.query.get(domo_id)
     if not domo:
@@ -206,15 +206,20 @@ def calcular_precio():
     if cantidad_noches <= 0:
         return jsonify({'error': 'La fecha final debe ser posterior a la inicial'}), 400
     
-    # Calcular precio
+    # Calcular precio por noche
     precio_total = 0
     fecha_actual = fecha_inicio
-    feriados = {f.fecha for f in Feriado.query.all()}
+    
+    # Obtener feriados
+    try:
+        feriados = {f.fecha for f in Feriado.query.all()}
+    except:
+        feriados = set()
     
     while fecha_actual < fecha_fin:
-        # Verificar si es feriado, fin de semana o semana
+        # Verificar si es feriado o fin de semana
         es_feriado = fecha_actual in feriados
-        es_fin_semana = fecha_actual.weekday() >= 4  # Viernes=4, Sábado=5, Domingo=6
+        es_fin_semana = fecha_actual.weekday() >= 5  # Sábado=5, Domingo=6
         
         if es_feriado or es_fin_semana:
             precio_total += domo.precio_fin_semana
@@ -223,21 +228,22 @@ def calcular_precio():
         
         fecha_actual += timedelta(days=1)
     
-    # Aplicar descuento si aplica
+    # Aplicar descuento si aplica (simplificado, sin configuración)
     descuento = 0
-    descuentos_config = Configuracion.query.filter_by(clave='descuentos').first()
-    descuentos = json.loads(descuentos_config.valor) if descuentos_config else {}
+    porcentaje_descuento = 0
     
-    for dias_minimo, porcentaje in sorted(descuentos.items(), key=lambda x: -int(x[0])):
-        if cantidad_noches >= int(dias_minimo):
-            descuento = porcentaje
-            break
+    # Descuentos básicos por cantidad de noches
+    if cantidad_noches >= 7:
+        porcentaje_descuento = 0.15  # 15% por 7+ noches
+    elif cantidad_noches >= 3:
+        porcentaje_descuento = 0.10  # 10% por 3+ noches
     
-    precio_con_descuento = precio_total * (1 - descuento)
+    descuento = precio_total * porcentaje_descuento
+    precio_con_descuento = precio_total - descuento
     
     return jsonify({
-        'precio_base': precio_total,
-        'descuento': int(precio_total - precio_con_descuento),
+        'precio_base': int(precio_total),
+        'descuento': int(descuento),
         'precio_total': int(precio_con_descuento),
         'noches': cantidad_noches
     }), 200
