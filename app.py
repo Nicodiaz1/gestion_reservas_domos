@@ -23,14 +23,53 @@ def admin_required(f):
 
 # ==================== INICIALIZACIÓN ====================
 
+def crear_domos_defecto():
+    """Crea los domos por defecto en la BD"""
+    try:
+        # Verificar si ya existen
+        if Domo.query.first() is not None:
+            return
+        
+        domos = [
+            Domo(
+                nombre='Domo Deluxe',
+                descripcion='Experiencia premium con vistas a la naturaleza, baño privado y terraza',
+                capacidad=2,
+                precio_semana=100,
+                precio_fin_semana=150
+            ),
+            Domo(
+                nombre='Domo Comfort',
+                descripcion='Confortables glamping con acceso a río y actividades de aventura',
+                capacidad=3,
+                precio_semana=100,
+                precio_fin_semana=150
+            ),
+            Domo(
+                nombre='Domo Premium',
+                descripcion='Lujo absoluto en la montaña con vista panorámica y piscina privada',
+                capacidad=4,
+                precio_semana=120,
+                precio_fin_semana=180
+            )
+        ]
+        for domo in domos:
+            db.session.add(domo)
+        db.session.commit()
+        print("✓ Domos creados exitosamente")
+    except Exception as e:
+        print(f"✗ Error creando domos: {e}")
+        db.session.rollback()
+
 def init_db():
     """Inicializa las tablas de la base de datos"""
     with app.app_context():
         try:
             db.create_all()
-            print("✓ Tablas creadas exitosamente")
+            crear_domos_defecto()
+            print("✓ Base de datos inicializada")
         except Exception as e:
-            print(f"✗ Error creating tables: {e}")
+            print(f"✗ Error: {e}")
 
 # Inicializar al crear la app
 init_db()
@@ -70,6 +109,12 @@ def index():
 def get_domos():
     """Retorna la lista de domos en formato JSON"""
     domos = Domo.query.all()
+    
+    # Si no hay domos, crear los por defecto
+    if not domos:
+        crear_domos_defecto()
+        domos = Domo.query.all()
+    
     resultado = []
     for domo in domos:
         resultado.append({
@@ -78,7 +123,8 @@ def get_domos():
             'descripcion': domo.descripcion,
             'capacidad': domo.capacidad,
             'precio_semana': domo.precio_semana,
-            'precio_fin_semana': domo.precio_fin_semana
+            'precio_fin_semana': domo.precio_fin_semana,
+            'imagen': f'/static/img/domo{domo.id}.jpg'
         })
     return jsonify(resultado), 200
 

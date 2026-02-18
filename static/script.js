@@ -1,13 +1,10 @@
 // ==================== VARIABLES GLOBALES ====================
 let domos = [];
 let selectedDomo = null;
-let selectedStartDate = null;
-let selectedEndDate = null;
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
     cargarDomos();
-    setupModals();
     setupFormListeners();
 });
 
@@ -20,28 +17,33 @@ async function cargarDomos() {
         const container = document.getElementById('domosContainer');
         container.innerHTML = '';
         
+        if (domos.length === 0) {
+            container.innerHTML = '<p class="loading">No hay domos disponibles</p>';
+            return;
+        }
+        
         for (const domo of domos) {
             const card = crearTarjetaDomo(domo);
             container.appendChild(card);
         }
     } catch (error) {
         console.error('Error cargando domos:', error);
-        mostrarError('Error al cargar los domos');
+        document.getElementById('domosContainer').innerHTML = '<p class="loading">Error al cargar los domos</p>';
     }
 }
 
 // ==================== CREAR TARJETA DOMO ====================
 function crearTarjetaDomo(domo) {
-    const card = document.createElement('div');
-    card.className = 'domo-card';
+    const div = document.createElement('div');
+    div.className = 'domo-card';
     
     const emojis = ['🏕️', '🏞️', '🌲'];
-    const emoji = emojis[domo.id % 3];
+    const emoji = emojis[(domo.id - 1) % 3];
     
-    card.innerHTML = `
+    div.innerHTML = `
         <div class="domo-image">
             <div style="font-size: 100px;">${emoji}</div>
-            <div class="domo-badge">Capacidad: ${domo.capacidad} personas</div>
+            <div class="domo-badge">👥 ${domo.capacidad} personas</div>
         </div>
         <div class="domo-content">
             <h2>${domo.nombre}</h2>
@@ -51,6 +53,7 @@ function crearTarjetaDomo(domo) {
                 <div class="feature">Hasta ${domo.capacidad} huéspedes</div>
                 <div class="feature">Baño privado</div>
                 <div class="feature">WiFi gratis</div>
+                <div class="feature">Desayuno</div>
             </div>
             
             <div class="price-section">
@@ -59,58 +62,56 @@ function crearTarjetaDomo(domo) {
                     <span class="price-value">$${domo.precio_semana}/noche</span>
                 </div>
                 <div class="price-row">
-                    <span class="price-label">Sáb-Dom (y feriados):</span>
+                    <span class="price-label">Sáb-Dom:</span>
                     <span class="price-value">$${domo.precio_fin_semana}/noche</span>
                 </div>
             </div>
             
-            <button class="btn" onclick="abrirReserva(${domo.id})">Reservar Ahora</button>
+            <button class="btn btn-primary" style="width: 100%;" onclick="abrirReserva(${domo.id})">Reservar Ahora</button>
         </div>
     `;
     
-    return card;
+    return div;
 }
 
-// ==================== MODAL DE RESERVA ====================
+// ==================== ABRIR MODAL DE RESERVA ====================
 function abrirReserva(domoId) {
     selectedDomo = domos.find(d => d.id === domoId);
-    selectedStartDate = null;
-    selectedEndDate = null;
+    if (!selectedDomo) return;
     
     document.getElementById('domoId').value = domoId;
     document.getElementById('domoNombre').value = selectedDomo.nombre;
     document.getElementById('fechaInicio').value = '';
     document.getElementById('fechaFin').value = '';
-    document.getElementById('precioSection').style.display = 'none';
     document.getElementById('nombreCliente').value = '';
     document.getElementById('emailCliente').value = '';
     document.getElementById('telefonoCliente').value = '';
+    document.getElementById('precioSection').style.display = 'none';
     
     document.getElementById('reservaModal').style.display = 'block';
 }
 
-function setupModals() {
-    const modal = document.getElementById('reservaModal');
-    const successModal = document.getElementById('successModal');
-    const closeBtn = document.querySelector('.close');
-    
-    closeBtn.onclick = () => modal.style.display = 'none';
-    
-    window.onclick = (event) => {
-        if (event.target === modal) modal.style.display = 'none';
-        if (event.target === successModal) successModal.style.display = 'none';
-    };
+// ==================== CERRAR MODAL ====================
+function cerrarModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
 }
 
+// ==================== SETUP FORM LISTENERS ====================
 function setupFormListeners() {
-    const form = document.getElementById('reservaForm');
     const fechaInicio = document.getElementById('fechaInicio');
     const fechaFin = document.getElementById('fechaFin');
+    const form = document.getElementById('reservaForm');
     
     fechaInicio.addEventListener('change', calcularPrecio);
     fechaFin.addEventListener('change', calcularPrecio);
-    
     form.addEventListener('submit', enviarReserva);
+    
+    // Cerrar modal al hacer clic fuera
+    window.onclick = (event) => {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = 'none';
+        }
+    };
 }
 
 // ==================== CALCULAR PRECIO ====================
@@ -135,15 +136,17 @@ async function calcularPrecio() {
         
         if (data.error) {
             mostrarError(data.error);
+            document.getElementById('precioSection').style.display = 'none';
             return;
         }
         
+        // Actualizar UI con precios
         document.getElementById('noches').textContent = data.noches;
         document.getElementById('precioBase').textContent = `$${data.precio_base}`;
         document.getElementById('precioTotal').textContent = `$${data.precio_total}`;
         
         const descuentoRow = document.getElementById('descuentoRow');
-        if (data.descuento > 0) {
+        if (data.descuento && data.descuento > 0) {
             descuentoRow.style.display = 'flex';
             document.getElementById('descuento').textContent = `-$${data.descuento}`;
         } else {
@@ -154,6 +157,7 @@ async function calcularPrecio() {
         
     } catch (error) {
         console.error('Error calculando precio:', error);
+        mostrarError('Error al calcular el precio');
     }
 }
 
@@ -162,7 +166,7 @@ async function enviarReserva(e) {
     e.preventDefault();
     
     const datos = {
-        domo_id: document.getElementById('domoId').value,
+        domo_id: parseInt(document.getElementById('domoId').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         fecha_fin: document.getElementById('fechaFin').value,
         nombre_cliente: document.getElementById('nombreCliente').value,
@@ -186,28 +190,38 @@ async function enviarReserva(e) {
         }
     } catch (error) {
         console.error('Error:', error);
-        mostrarError('Error al crear la reserva');
+        mostrarError('Error al crear la reserva. Intenta de nuevo.');
     }
 }
 
-// ==================== MENSAJES ====================
+// ==================== MOSTRAR ERROR ====================
 function mostrarError(mensaje) {
-    alert('❌ ' + mensaje);
+    const modal = document.getElementById('errorModal');
+    document.getElementById('errorMessage').textContent = mensaje;
+    modal.style.display = 'block';
 }
 
+// ==================== MOSTRAR ÉXITO ====================
 function mostrarExito(data) {
-    const modal = document.getElementById('reservaModal');
+    const reservaModal = document.getElementById('reservaModal');
     const successModal = document.getElementById('successModal');
     const mensaje = document.getElementById('successMessage');
     
+    const nombreCliente = document.getElementById('nombreCliente').value;
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+    const emailCliente = document.getElementById('emailCliente').value;
+    const precioTotal = document.getElementById('precioTotal').textContent;
+    
     mensaje.innerHTML = `
         <p><strong>${selectedDomo.nombre}</strong></p>
-        <p>Entrada: ${document.getElementById('fechaInicio').value}</p>
-        <p>Salida: ${document.getElementById('fechaFin').value}</p>
-        <p style="margin-top: 15px; font-size: 18px; color: var(--color-primary);"><strong>Total: $${document.getElementById('precioTotal').textContent.replace('$', '')}</strong></p>
-        <p style="margin-top: 15px; font-size: 13px;">Te enviaremos un email de confirmación a ${document.getElementById('emailCliente').value}</p>
+        <p style="margin: 12px 0; font-size: 14px;">Nombre: ${nombreCliente}</p>
+        <p style="margin: 12px 0; font-size: 14px;">Entrada: <strong>${fechaInicio}</strong></p>
+        <p style="margin: 12px 0; font-size: 14px;">Salida: <strong>${fechaFin}</strong></p>
+        <p style="margin: 20px 0; font-size: 18px; color: #4caf50;"><strong>${precioTotal}</strong></p>
+        <p style="margin-top: 15px; font-size: 13px; color: #666;">Se envió confirmación a ${emailCliente}</p>
     `;
     
-    modal.style.display = 'none';
+    reservaModal.style.display = 'none';
     successModal.style.display = 'block';
 }
