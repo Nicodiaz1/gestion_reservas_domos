@@ -1199,6 +1199,20 @@ input[type="date"]:invalid {
     font-weight: bold;
 }
 
+.calendario-day.checkout {
+    background: linear-gradient(135deg, #f44336 50%, #4caf50 50%);
+    color: white;
+    font-weight: bold;
+}
+
+.calendario-day.checkout.rango-inicio {
+    background: linear-gradient(135deg, #4caf50 50%, #f44336 50%);
+}
+
+.calendario-day.checkout.rango-fin {
+    background: linear-gradient(135deg, #f44336 50%, #4caf50 50%);
+}
+
 .calendario-day.pasada {
     background: #c0c0c0;
     color: #888;

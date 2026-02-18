@@ -1,7 +1,8 @@
 // ==================== VARIABLES GLOBALES ====================
 let domos = [];
 let selectedDomo = null;
-let fechasOcupadas = [];
+let fechasOcupadas = [];        // Fechas completamente ocupadas (rojo)
+let fechasCheckout = [];        // Fechas de salida (disponibles como entrada siguiente - naranja)
 let calendarioMes = new Date();
 let fechaInicioTemp = null;
 let fechaFinTemp = null;
@@ -97,14 +98,16 @@ async function abrirReserva(domoId) {
     document.getElementById('telefonoCliente').value = '';
     document.getElementById('precioSection').style.display = 'none';
     
-    // Cargar fechas ocupadas
+    // Cargar fechas ocupadas y checkouts
     try {
         const res = await fetch(`/api/disponibilidad/${domoId}`);
         const data = await res.json();
         fechasOcupadas = data.ocupadas || [];
+        fechasCheckout = data.checkouts || [];
     } catch (error) {
         console.error('Error cargando disponibilidad:', error);
         fechasOcupadas = [];
+        fechasCheckout = [];
     }
     
     // Inicializar calendario único
@@ -173,6 +176,11 @@ function construirCalendario() {
         } else if (estaOcupada) {
             btn.classList.add('reserved');
             // Permitir seleccionar ocupadas, la validación se hace en la función
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
+        } else if (fechasCheckout.includes(fechaStr)) {
+            // Fechas de checkout: se pueden usar como fecha_inicio (naranja)
+            btn.classList.add('checkout');
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else {

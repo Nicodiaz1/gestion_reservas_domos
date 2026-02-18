@@ -185,19 +185,23 @@ def get_domos():
 
 @app.route('/api/disponibilidad/<int:domo_id>')
 def get_disponibilidad(domo_id):
-    """Retorna las fechas ocupadas de un domo (para mostrar en rojo en el calendario)"""
+    """Retorna las fechas ocupadas y de checkout de un domo"""
     reservas = Reserva.query.filter_by(domo_id=domo_id, estado='confirmada').all()
     
     ocupadas = []
+    checkouts = []
+    
     for reserva in reservas:
-        # Mostrar TODAS las noches ocupadas: desde fecha_inicio hasta fecha_fin (inclusive)
-        # Para que el usuario vea claramente qué días están ocupados
+        # Ocupadas: desde fecha_inicio hasta fecha_fin-1 (noches en que está ocupado)
         fecha_actual = reserva.fecha_inicio
-        while fecha_actual <= reserva.fecha_fin:
+        while fecha_actual < reserva.fecha_fin:
             ocupadas.append(fecha_actual.isoformat())
             fecha_actual += timedelta(days=1)
+        
+        # Checkouts: la fecha_fin se muestra como "checkout" (salida pero disponible como entrada siguiente)
+        checkouts.append(reserva.fecha_fin.isoformat())
     
-    return jsonify({'ocupadas': ocupadas}), 200
+    return jsonify({'ocupadas': ocupadas, 'checkouts': checkouts}), 200
 
 @app.route('/api/calcular-precio', methods=['POST'])
 def calcular_precio():
