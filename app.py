@@ -23,13 +23,17 @@ def admin_required(f):
 
 # ==================== INICIALIZACIÓN ====================
 
-@app.before_request
+@app.with_appcontext
 def create_tables():
     """Crea las tablas si no existen"""
     try:
         db.create_all()
-    except:
-        pass
+    except Exception as e:
+        print(f"Error creating tables: {e}")
+
+# Crear tablas al iniciar
+with app.app_context():
+    create_tables()
 
 @app.route('/init-db', methods=['POST'])
 def init_db_route():
