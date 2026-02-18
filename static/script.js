@@ -358,8 +358,8 @@ function validarFechasReservadas() {
     let fechaActual = new Date(inicio);
     let hayConflicto = false;
     
-    // Validar que no haya conflicto: las fechas ocupadas deben estar ANTES de la fecha_fin
-    // (ya que la fecha_fin es checkout y está disponible para la próxima reserva)
+    // Validar que NO haya conflicto en las fechas de estadía
+    // Permite que fecha_fin sea igual a fecha_inicio de otra reserva (checkout/checkin mismo día)
     while (fechaActual < fin) {
         const fechaStr = fechaActual.toISOString().split('T')[0];
         if (fechasOcupadas.includes(fechaStr)) {

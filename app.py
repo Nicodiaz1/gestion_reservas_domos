@@ -185,15 +185,15 @@ def get_domos():
 
 @app.route('/api/disponibilidad/<int:domo_id>')
 def get_disponibilidad(domo_id):
-    """Retorna las fechas ocupadas de un domo"""
+    """Retorna las fechas ocupadas de un domo (para mostrar en rojo en el calendario)"""
     reservas = Reserva.query.filter_by(domo_id=domo_id, estado='confirmada').all()
     
     ocupadas = []
     for reserva in reservas:
-        # Las fechas ocupadas son desde fecha_inicio hasta fecha_fin - 1 día
-        # La fecha_fin está disponible para la próxima reserva (checkout/checkin mismo día)
+        # Mostrar TODAS las noches ocupadas: desde fecha_inicio hasta fecha_fin (inclusive)
+        # Para que el usuario vea claramente qué días están ocupados
         fecha_actual = reserva.fecha_inicio
-        while fecha_actual < reserva.fecha_fin:
+        while fecha_actual <= reserva.fecha_fin:
             ocupadas.append(fecha_actual.isoformat())
             fecha_actual += timedelta(days=1)
     
