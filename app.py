@@ -278,8 +278,8 @@ def crear_reserva():
     email = data.get('email_cliente', '').strip()
     telefono = data.get('telefono_cliente', '').strip()
     
-    if not email and not telefono:
-        return jsonify({'error': 'Debes proporcionar al menos email o teléfono'}), 400
+    if not telefono:
+        return jsonify({'error': 'Debes proporcionar un teléfono'}), 400
     
     try:
         # Verificar disponibilidad usando SQL raw para evitar problemas con nombres de columnas
@@ -404,7 +404,13 @@ def admin_dashboard():
 def get_reservas_admin():
     """Obtiene todas las reservas (solo admin)"""
     reservas = Reserva.query.all()
-    return jsonify([r.to_dict() for r in reservas]), 200
+    return jsonify([
+        {
+            **r.to_dict(),
+            'domo_nombre': r.domo.nombre if r.domo else None
+        }
+        for r in reservas
+    ]), 200
 
 @app.route('/api/admin/domos')
 @admin_required

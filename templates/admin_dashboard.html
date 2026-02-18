@@ -78,7 +78,7 @@
         // ========== RESERVAS ==========
         async function cargarReservas() {
             try {
-                const res = await fetch('/admin/api/reservas');
+                const res = await fetch('/api/admin/reservas');
                 const reservas = await res.json();
                 
                 const html = reservas.map(r => `
@@ -88,7 +88,6 @@
                         <p><strong>Email:</strong> ${r.email_cliente || 'N/A'}</p>
                         <p><strong>Teléfono:</strong> ${r.telefono_cliente || 'N/A'}</p>
                         <p><strong>Fechas:</strong> ${r.fecha_inicio} a ${r.fecha_fin}</p>
-                        <p><strong>Precio:</strong> $${r.precio_total}</p>
                         <p><strong>Estado:</strong> <span class="status ${r.estado}">${r.estado}</span></p>
                         ${r.estado === 'confirmada' ? `<button class="btn btn-danger" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ''}
                     </div>
@@ -103,9 +102,9 @@
         async function cancelarReserva(reservaId) {
             if (!confirm('¿Cancelar esta reserva?')) return;
             try {
-                const res = await fetch(`/admin/api/cancelar-reserva/${reservaId}`, { method: 'POST' });
+                const res = await fetch(`/api/admin/reserva/${reservaId}`, { method: 'DELETE' });
                 const data = await res.json();
-                if (data.success) {
+                if (res.ok) {
                     cargarReservas();
                     alert('Reserva cancelada');
                 }

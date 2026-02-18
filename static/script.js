@@ -168,9 +168,9 @@ async function enviarReserva(e) {
     const email = document.getElementById('emailCliente').value.trim();
     const telefono = document.getElementById('telefonoCliente').value.trim();
     
-    // Validar que al menos uno de email o teléfono esté completo
-    if (!email && !telefono) {
-        mostrarError('Debes proporcionar al menos Email o Teléfono');
+    // Validar que teléfono esté completo
+    if (!telefono) {
+        mostrarError('Debes proporcionar un Teléfono');
         return;
     }
     
@@ -226,6 +226,7 @@ function mostrarExito(data) {
     const fechaFin = document.getElementById('fechaFin').value;
     const emailCliente = document.getElementById('emailCliente').value;
     const precioTotal = document.getElementById('precioTotal').textContent;
+    const emailMsg = emailCliente ? `Se envió confirmación a ${emailCliente}` : 'Te contactaremos por WhatsApp';
     
     mensaje.innerHTML = `
         <p><strong>${selectedDomo.nombre}</strong></p>
@@ -233,7 +234,7 @@ function mostrarExito(data) {
         <p style="margin: 12px 0; font-size: 14px;">Entrada: <strong>${fechaInicio}</strong></p>
         <p style="margin: 12px 0; font-size: 14px;">Salida: <strong>${fechaFin}</strong></p>
         <p style="margin: 20px 0; font-size: 18px; color: #4caf50;"><strong>${precioTotal}</strong></p>
-        <p style="margin-top: 15px; font-size: 13px; color: #666;">Se envió confirmación a ${emailCliente}</p>
+        <p style="margin-top: 15px; font-size: 13px; color: #666;">${emailMsg}</p>
     `;
     
     reservaModal.style.display = 'none';
