@@ -4,7 +4,9 @@ from datetime import datetime
 class Config:
     """Configuración general de la aplicación"""
     SECRET_KEY = 'domos2025_secret_key'
-    _database_url = os.environ.get('DATABASE_URL', 'sqlite:///domos_reservas.db')
+    _database_url = os.environ.get('DATABASE_URL')
+    if not _database_url:
+        raise RuntimeError('DATABASE_URL no está configurada')
     if _database_url.startswith('postgresql://'):
         _database_url = _database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
     SQLALCHEMY_DATABASE_URI = _database_url
