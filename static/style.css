@@ -56,9 +56,28 @@ body {
     align-items: center;
 }
 
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo-image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .logo h1 {
     font-size: 32px;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -94,7 +113,9 @@ body {
 
 /* ==================== HERO SECTION ==================== */
 .hero {
-    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary-light) 100%);
+    background: 
+        linear-gradient(135deg, rgba(45, 80, 22, 0.6) 0%, rgba(45, 80, 22, 0.6) 100%),
+        url('https://i.imgur.com/B1ydkwh.jpg') center / cover no-repeat;
     color: white;
     padding: 80px 0;
     text-align: center;
