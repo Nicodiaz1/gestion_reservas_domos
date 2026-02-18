@@ -190,8 +190,10 @@ def get_disponibilidad(domo_id):
     
     ocupadas = []
     for reserva in reservas:
+        # Las fechas ocupadas son desde fecha_inicio hasta fecha_fin - 1 día
+        # La fecha_fin está disponible para la próxima reserva (checkout/checkin mismo día)
         fecha_actual = reserva.fecha_inicio
-        while fecha_actual <= reserva.fecha_fin:
+        while fecha_actual < reserva.fecha_fin:
             ocupadas.append(fecha_actual.isoformat())
             fecha_actual += timedelta(days=1)
     

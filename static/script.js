@@ -40,12 +40,17 @@ function crearTarjetaDomo(domo) {
     const div = document.createElement('div');
     div.className = 'domo-card';
     
-    const emojis = ['🏕️', '🏞️', '🌲'];
-    const emoji = emojis[(domo.id - 1) % 3];
+    // URLs de las imágenes de los domos desde Imgur
+    const imagenes = [
+        'https://i.imgur.com/cfLIaDz.jpg',  // Domo 1 - Aguaribay
+        'https://i.imgur.com/ZeWzC9v.jpg',  // Domo 2 - Espinillo
+        'https://i.imgur.com/lUI8A1z.jpg'   // Domo 3 - Eucalipto
+    ];
+    const imagenUrl = imagenes[(domo.id - 1) % 3];
     
     div.innerHTML = `
         <div class="domo-image">
-            <div style="font-size: 100px;">${emoji}</div>
+            <img src="${imagenUrl}" alt="${domo.nombre}" style="width: 100%; height: 100%; object-fit: cover;">
             <div class="domo-badge">👥 ${domo.capacidad} personas</div>
         </div>
         <div class="domo-content">
@@ -263,7 +268,9 @@ function validarFechasReservadas() {
     let fechaActual = new Date(inicio);
     let hayConflicto = false;
     
-    while (fechaActual <= fin) {
+    // Validar que no haya conflicto: las fechas ocupadas deben estar ANTES de la fecha_fin
+    // (ya que la fecha_fin es checkout y está disponible para la próxima reserva)
+    while (fechaActual < fin) {
         const fechaStr = fechaActual.toISOString().split('T')[0];
         if (fechasOcupadas.includes(fechaStr)) {
             hayConflicto = true;
