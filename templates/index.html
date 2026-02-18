@@ -94,17 +94,21 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Fecha de Entrada</label>
-                        <div id="calendario-inicio" class="calendario-container"></div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Selecciona tus fechas</label>
+                        <div id="calendario" class="calendario-container"></div>
                         <input type="hidden" id="fechaInicio" required>
-                        <p id="fechaInicio-display" class="fecha-display">Seleccionar fecha</p>
-                    </div>
-                    <div class="form-group">
-                        <label>Fecha de Salida</label>
-                        <div id="calendario-fin" class="calendario-container"></div>
                         <input type="hidden" id="fechaFin" required>
-                        <p id="fechaFin-display" class="fecha-display">Seleccionar fecha</p>
+                        <div style="display: flex; gap: 20px; margin-top: 16px;">
+                            <div>
+                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #666;">Entrada:</p>
+                                <p id="fechaInicio-display" class="fecha-display">Seleccionar</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 4px 0; font-size: 12px; color: #666;">Salida:</p>
+                                <p id="fechaFin-display" class="fecha-display">Seleccionar</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

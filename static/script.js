@@ -2,8 +2,9 @@
 let domos = [];
 let selectedDomo = null;
 let fechasOcupadas = [];
-let calendario_inicio_mes = new Date();
-let calendario_fin_mes = new Date();
+let calendarioMes = new Date();
+let fechaInicioTemp = null;
+let fechaFinTemp = null;
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -106,38 +107,37 @@ async function abrirReserva(domoId) {
         fechasOcupadas = [];
     }
     
-    // Inicializar calendarios
-    calendario_inicio_mes = new Date();
-    calendario_fin_mes = new Date();
-    calendario_fin_mes.setMonth(calendario_fin_mes.getMonth() + 1);
+    // Inicializar calendario único
+    calendarioMes = new Date();
+    fechaInicioTemp = null;
+    fechaFinTemp = null;
     
-    construirCalendario('inicio');
-    construirCalendario('fin');
+    construirCalendario();
     
     document.getElementById('reservaModal').style.display = 'block';
 }
 
 // ==================== CONSTRUIR CALENDARIO ====================
-function construirCalendario(tipo) {
-    const mes = tipo === 'inicio' ? calendario_inicio_mes : calendario_fin_mes;
-    const container = document.getElementById(`calendario-${tipo}`);
+function construirCalendario() {
+    const mes = calendarioMes;
+    const container = document.getElementById('calendario');
     
     container.innerHTML = `
         <div class="calendario-header">
-            <button type="button" onclick="cambiarMes('${tipo}', -1)">← Anterior</button>
+            <button type="button" onclick="cambiarMes(-1)">← Anterior</button>
             <h3>${mes.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}</h3>
-            <button type="button" onclick="cambiarMes('${tipo}', 1)">Siguiente →</button>
+            <button type="button" onclick="cambiarMes(1)">Siguiente →</button>
         </div>
         <div class="calendario-weekdays">
             <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
         </div>
-        <div class="calendario-days" id="dias-${tipo}"></div>
+        <div class="calendario-days" id="dias"></div>
     `;
     
     // Llenar días
     const primerDia = new Date(mes.getFullYear(), mes.getMonth(), 1);
     const ultimoDia = new Date(mes.getFullYear(), mes.getMonth() + 1, 0);
-    const diasContainer = document.getElementById(`dias-${tipo}`);
+    const diasContainer = document.getElementById('dias');
     
     // Días del mes anterior
     const inicioDia = primerDia.getDay() === 0 ? 6 : primerDia.getDay() - 1;
@@ -154,7 +154,7 @@ function construirCalendario(tipo) {
     
     // Días del mes actual
     const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0); // Asegurar que sea medianoche
+    hoy.setHours(0, 0, 0, 0);
     
     for (let d = 1; d <= ultimoDia.getDate(); d++) {
         const fecha = new Date(mes.getFullYear(), mes.getMonth(), d);
@@ -164,7 +164,6 @@ function construirCalendario(tipo) {
         btn.textContent = d;
         btn.className = 'calendario-day';
         
-        // Verificar si la fecha es pasada
         const esPasada = fecha < hoy;
         const estaOcupada = fechasOcupadas.includes(fechaStr);
         
@@ -173,17 +172,23 @@ function construirCalendario(tipo) {
             btn.disabled = true;
         } else if (estaOcupada) {
             btn.classList.add('reserved');
-            // Permitir seleccionar como fecha_fin si es para checkout
-            if (tipo === 'fin') {
-                btn.disabled = false;
-                btn.onclick = () => seleccionarFecha(tipo, fechaStr, true);
-            } else {
-                btn.disabled = true;
-            }
+            btn.disabled = true;
+        } else {
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
         }
         
-        if (!esPasada && !estaOcupada) {
-            btn.onclick = () => seleccionarFecha(tipo, fechaStr, true);
+        // Marcar si está en el rango seleccionado
+        if (fechaInicioTemp && fechaFinTemp) {
+            const inicio = new Date(fechaInicioTemp);
+            const fin = new Date(fechaFinTemp);
+            if (fecha > inicio && fecha < fin) {
+                btn.classList.add('rango');
+            } else if (fechaStr === fechaInicioTemp) {
+                btn.classList.add('rango-inicio');
+            } else if (fechaStr === fechaFinTemp) {
+                btn.classList.add('rango-fin');
+            }
         }
         
         diasContainer.appendChild(btn);
@@ -204,30 +209,50 @@ function construirCalendario(tipo) {
 }
 
 // ==================== CAMBIAR MES ====================
-function cambiarMes(tipo, incremento) {
-    if (tipo === 'inicio') {
-        calendario_inicio_mes.setMonth(calendario_inicio_mes.getMonth() + incremento);
-    } else {
-        calendario_fin_mes.setMonth(calendario_fin_mes.getMonth() + incremento);
+function cambiarMes(incremento) {
+    calendarioMes.setMonth(calendarioMes.getMonth() + incremento);
+    construirCalendario();
+// ==================== SELECCIONAR RANGO DE FECHAS ====================
+function seleccionarFechaRango(fechaStr) {
+    if (!fechaInicioTemp) {
+        // Primera selección: fecha de inicio
+        fechaInicioTemp = fechaStr;
+        fechaFinTemp = null;
+        
+        document.getElementById('fechaInicio').value = fechaStr;
+        const [year, month, day] = fechaStr.split('-');
+        const fecha = new Date(year, month - 1, day);
+        const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        document.getElementById('fechaInicio-display').textContent = fechaFormato;
+        
+    } else if (!fechaFinTemp) {
+        // Segunda selección: fecha de fin
+        const inicio = new Date(fechaInicioTemp);
+        const fin = new Date(fechaStr);
+        
+        if (fin <= inicio) {
+            // Si selecciona una fecha anterior, es la nueva fecha de inicio
+            fechaInicioTemp = fechaStr;
+            fechaFinTemp = null;
+            
+            document.getElementById('fechaInicio').value = fechaStr;
+            const [year, month, day] = fechaStr.split('-');
+            const fecha = new Date(year, month - 1, day);
+            const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            document.getElementById('fechaInicio-display').textContent = fechaFormato;
+            document.getElementById('fechaFin-display').textContent = 'Seleccionar';
+        } else {
+            fechaFinTemp = fechaStr;
+            
+            document.getElementById('fechaFin').value = fechaStr;
+            const [year, month, day] = fechaStr.split('-');
+            const fecha = new Date(year, month - 1, day);
+            const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            document.getElementById('fechaFin-display').textContent = fechaFormato;
+        }
     }
-    construirCalendario(tipo);
-}
-
-// ==================== SELECCIONAR FECHA ====================
-function seleccionarFecha(tipo, fechaStr, permitido) {
-    if (!permitido) return;
     
-    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}`).value = fechaStr;
-    
-    // Parsear fecha correctamente sin desfase de timezone
-    const [year, month, day] = fechaStr.split('-');
-    const fecha = new Date(year, month - 1, day);
-    const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    
-    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}-display`).textContent = fechaFormato;
-    
-    // Resaltar fecha seleccionada
-    construirCalendario(tipo);
+    construirCalendario();
     validarFechasReservadas();
     calcularPrecio();
 }

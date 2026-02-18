@@ -41,7 +41,10 @@ body {
 
 /* ==================== HEADER ==================== */
 .header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    background: 
+        url('https://i.imgur.com/P4AU1b1.jpg') repeat,
+        linear-gradient(135deg, rgba(45, 80, 22, 0.85) 0%, rgba(45, 80, 22, 0.85) 100%);
+    background-blend-mode: overlay;
     color: white;
     padding: 24px 0;
     box-shadow: var(--shadow);
@@ -1172,6 +1175,19 @@ input[type="date"]:invalid {
 
 .calendario-day.selected {
     background: var(--primary);
+    color: white;
+    font-weight: bold;
+}
+
+.calendario-day.rango {
+    background: #4caf50;
+    color: white;
+    font-weight: bold;
+}
+
+.calendario-day.rango-inicio,
+.calendario-day.rango-fin {
+    background: #2e7d32;
     color: white;
     font-weight: bold;
 }
