@@ -172,7 +172,9 @@ function construirCalendario() {
             btn.disabled = true;
         } else if (estaOcupada) {
             btn.classList.add('reserved');
-            btn.disabled = true;
+            btn.disabled = false;
+            // Permitir seleccionar ocupadas solo como fecha_fin (checkout)
+            btn.onclick = () => seleccionarFechaRangoConOcupada(fechaStr);
         } else {
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
@@ -216,6 +218,23 @@ function cambiarMes(incremento) {
 
 // ==================== SELECCIONAR RANGO DE FECHAS ====================
 function seleccionarFechaRango(fechaStr) {
+    // Si hace clic en la misma fecha seleccionada, desselecciona
+    if (fechaStr === fechaInicioTemp && !fechaFinTemp) {
+        fechaInicioTemp = null;
+        document.getElementById('fechaInicio-display').textContent = 'Seleccionar';
+        document.getElementById('fechaInicio').value = '';
+        construirCalendario();
+        return;
+    }
+    
+    if (fechaStr === fechaFinTemp) {
+        fechaFinTemp = null;
+        document.getElementById('fechaFin-display').textContent = 'Seleccionar';
+        document.getElementById('fechaFin').value = '';
+        construirCalendario();
+        return;
+    }
+    
     if (!fechaInicioTemp) {
         // Primera selección: fecha de inicio
         fechaInicioTemp = fechaStr;
@@ -252,6 +271,44 @@ function seleccionarFechaRango(fechaStr) {
             const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
             document.getElementById('fechaFin-display').textContent = fechaFormato;
         }
+    }
+    
+    construirCalendario();
+    validarFechasReservadas();
+    calcularPrecio();
+}
+
+// ==================== SELECCIONAR FECHA OCUPADA (solo como fin) ====================
+function seleccionarFechaRangoConOcupada(fechaStr) {
+    // Si hace clic en la misma fecha seleccionada, desselecciona
+    if (fechaStr === fechaFinTemp) {
+        fechaFinTemp = null;
+        document.getElementById('fechaFin-display').textContent = 'Seleccionar';
+        document.getElementById('fechaFin').value = '';
+        construirCalendario();
+        return;
+    }
+    
+    if (!fechaInicioTemp) {
+        // No se puede seleccionar ocupada como inicio
+        mostrarError('Esa fecha no está disponible como entrada. Selecciona otra fecha.');
+        return;
+    } else if (!fechaFinTemp) {
+        // Solo como fecha de fin (checkout)
+        const inicio = new Date(fechaInicioTemp);
+        const fin = new Date(fechaStr);
+        
+        if (fin <= inicio) {
+            mostrarError('La fecha de salida debe ser posterior a la entrada.');
+            return;
+        }
+        
+        fechaFinTemp = fechaStr;
+        document.getElementById('fechaFin').value = fechaStr;
+        const [year, month, day] = fechaStr.split('-');
+        const fecha = new Date(year, month - 1, day);
+        const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        document.getElementById('fechaFin-display').textContent = fechaFormato;
     }
     
     construirCalendario();

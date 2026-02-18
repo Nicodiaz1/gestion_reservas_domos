@@ -42,8 +42,8 @@ body {
 /* ==================== HEADER ==================== */
 .header {
     background: 
-        url('https://i.imgur.com/dtQBpaP.jpg') repeat,
-        linear-gradient(135deg, rgba(45, 80, 22, 0.85) 0%, rgba(45, 80, 22, 0.85) 100%);
+        url('https://i.imgur.com/dtQBpaP.jpg') center / cover no-repeat,
+        linear-gradient(135deg, rgba(45, 80, 22, 0.7) 0%, rgba(45, 80, 22, 0.7) 100%);
     background-blend-mode: overlay;
     color: white;
     padding: 24px 0;
@@ -51,6 +51,7 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
+    min-height: 80px;
 }
 
 .header-content {
