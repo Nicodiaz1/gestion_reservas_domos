@@ -380,7 +380,7 @@ def crear_reserva():
 def admin_login():
     """Login del administrador"""
     if request.method == 'POST':
-        contrasenia = request.form.get('contrasenia')
+        contrasenia = request.form.get('password')
         if contrasenia == Config.ADMIN_PASSWORD:
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
