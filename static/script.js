@@ -173,7 +173,13 @@ function construirCalendario(tipo) {
             btn.disabled = true;
         } else if (estaOcupada) {
             btn.classList.add('reserved');
-            btn.disabled = true;
+            // Permitir seleccionar como fecha_fin si es para checkout
+            if (tipo === 'fin') {
+                btn.disabled = false;
+                btn.onclick = () => seleccionarFecha(tipo, fechaStr, true);
+            } else {
+                btn.disabled = true;
+            }
         }
         
         if (!esPasada && !estaOcupada) {
