@@ -148,6 +148,9 @@ function construirCalendario(tipo) {
     }
     
     // Días del mes actual
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); // Asegurar que sea medianoche
+    
     for (let d = 1; d <= ultimoDia.getDate(); d++) {
         const fecha = new Date(mes.getFullYear(), mes.getMonth(), d);
         const fechaStr = fecha.toISOString().split('T')[0];
@@ -156,13 +159,22 @@ function construirCalendario(tipo) {
         btn.textContent = d;
         btn.className = 'calendario-day';
         
+        // Verificar si la fecha es pasada
+        const esPasada = fecha < hoy;
         const estaOcupada = fechasOcupadas.includes(fechaStr);
-        if (estaOcupada) {
+        
+        if (esPasada) {
+            btn.classList.add('pasada');
+            btn.disabled = true;
+        } else if (estaOcupada) {
             btn.classList.add('reserved');
             btn.disabled = true;
         }
         
-        btn.onclick = () => seleccionarFecha(tipo, fechaStr, !estaOcupada);
+        if (!esPasada && !estaOcupada) {
+            btn.onclick = () => seleccionarFecha(tipo, fechaStr, true);
+        }
+        
         diasContainer.appendChild(btn);
     }
     
@@ -195,7 +207,13 @@ function seleccionarFecha(tipo, fechaStr, permitido) {
     if (!permitido) return;
     
     document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}`).value = fechaStr;
-    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}-display`).textContent = new Date(fechaStr).toLocaleDateString('es-ES');
+    
+    // Parsear fecha correctamente sin desfase de timezone
+    const [year, month, day] = fechaStr.split('-');
+    const fecha = new Date(year, month - 1, day);
+    const fechaFormato = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    document.getElementById(`fecha${tipo === 'inicio' ? 'Inicio' : 'Fin'}-display`).textContent = fechaFormato;
     
     // Resaltar fecha seleccionada
     construirCalendario(tipo);
