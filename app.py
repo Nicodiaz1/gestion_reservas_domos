@@ -274,20 +274,6 @@ def crear_reserva():
     except Exception as e:
         return jsonify({'error': f'Formato de fecha inválido: {str(e)}'}), 400
     
-    # Verificar disponibilidad
-    try:
-        conflicto = Reserva.query.filter(
-            Reserva.domo_id == data['domo_id'],
-            Reserva.estado == 'confirmada',
-            Reserva.fecha_inicio <= fecha_fin,
-            Reserva.fecha_fin >= fecha_inicio
-        ).first()
-        
-        if conflicto:
-            return jsonify({'error': 'Estas fechas no están disponibles'}), 409
-    except Exception as e:
-        return jsonify({'error': f'Error verificando disponibilidad: {str(e)}'}), 500
-    
     # Validar que al menos email o teléfono estén presentes
     email = data.get('email_cliente', '').strip()
     telefono = data.get('telefono_cliente', '').strip()
@@ -296,29 +282,56 @@ def crear_reserva():
         return jsonify({'error': 'Debes proporcionar al menos email o teléfono'}), 400
     
     try:
+        # Verificar disponibilidad usando SQL raw para evitar problemas con nombres de columnas
+        from sqlalchemy import text
+        
+        sql = text("""
+            SELECT COUNT(*) as count FROM reservas 
+            WHERE domo_id = :domo_id 
+            AND estado = 'confirmada'
+            AND fecha_inicio <= :fecha_fin 
+            AND fecha_fin >= :fecha_inicio
+        """)
+        
+        result = db.session.execute(sql, {
+            'domo_id': data['domo_id'],
+            'fecha_fin': fecha_fin,
+            'fecha_inicio': fecha_inicio
+        }).fetchone()
+        
+        if result[0] > 0:
+            return jsonify({'error': 'Estas fechas no están disponibles'}), 409
+        
         domo = Domo.query.get(data['domo_id'])
         if not domo:
             return jsonify({'error': 'Domo no encontrado'}), 404
         
-        cantidad_noches = (fecha_fin - fecha_inicio).days
+        # Insertar reserva usando SQL raw para compatibilidad
+        sql_insert = text("""
+            INSERT INTO reservas (
+                domo_id, nombre_cliente, email_cliente, telefono_cliente,
+                fecha_inicio, fecha_fin, estado, fecha_creacion
+            ) VALUES (
+                :domo_id, :nombre_cliente, :email_cliente, :telefono_cliente,
+                :fecha_inicio, :fecha_fin, 'confirmada', :fecha_creacion
+            )
+        """)
         
-        reserva = Reserva(
-            domo_id=data['domo_id'],
-            nombre_cliente=data['nombre_cliente'],
-            email_cliente=email,
-            telefono_cliente=telefono,
-            fecha_inicio=fecha_inicio,
-            fecha_fin=fecha_fin,
-            estado='confirmada'
-        )
+        db.session.execute(sql_insert, {
+            'domo_id': data['domo_id'],
+            'nombre_cliente': data['nombre_cliente'],
+            'email_cliente': email,
+            'telefono_cliente': telefono,
+            'fecha_inicio': fecha_inicio,
+            'fecha_fin': fecha_fin,
+            'fecha_creacion': datetime.utcnow()
+        })
         
-        db.session.add(reserva)
         db.session.commit()
         
         return jsonify({
             'success': True,
-            'mensaje': 'Reserva creada exitosamente',
-            'reserva_id': reserva.id
+            'mensaje': 'Reserva creada exitosamente'
         }), 201
         
     except Exception as e:
