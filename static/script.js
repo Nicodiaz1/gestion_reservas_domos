@@ -56,7 +56,7 @@ function crearTarjetaDomo(domo) {
                 <div class="feature">Desayuno</div>
             </div>
             
-            <div class="price-section">
+            <div class="price-section" style="display: none;">
                 <div class="price-row">
                     <span class="price-label">Lun-Jue:</span>
                     <span class="price-value">$${domo.precio_semana.toLocaleString()}/noche</span>
@@ -75,7 +75,7 @@ function crearTarjetaDomo(domo) {
 }
 
 // ==================== ABRIR MODAL DE RESERVA ====================
-function abrirReserva(domoId) {
+async function abrirReserva(domoId) {
     selectedDomo = domos.find(d => d.id === domoId);
     if (!selectedDomo) return;
     
@@ -87,6 +87,24 @@ function abrirReserva(domoId) {
     document.getElementById('emailCliente').value = '';
     document.getElementById('telefonoCliente').value = '';
     document.getElementById('precioSection').style.display = 'none';
+    
+    // Cargar fechas ocupadas
+    try {
+        const res = await fetch(`/api/disponibilidad/${domoId}`);
+        const data = await res.json();
+        const fechasOcupadas = data.ocupadas || [];
+        
+        // Deshabilitar fechas ocupadas en inputs
+        const fechaInicioInput = document.getElementById('fechaInicio');
+        const fechaFinInput = document.getElementById('fechaFin');
+        
+        // Aplicar atributo de fechas deshabilitadas
+        const ocupadasStr = fechasOcupadas.join(',');
+        fechaInicioInput.setAttribute('data-unavailable', ocupadasStr);
+        fechaFinInput.setAttribute('data-unavailable', ocupadasStr);
+    } catch (error) {
+        console.error('Error cargando disponibilidad:', error);
+    }
     
     document.getElementById('reservaModal').style.display = 'block';
 }
@@ -102,8 +120,14 @@ function setupFormListeners() {
     const fechaFin = document.getElementById('fechaFin');
     const form = document.getElementById('reservaForm');
     
-    fechaInicio.addEventListener('change', calcularPrecio);
-    fechaFin.addEventListener('change', calcularPrecio);
+    fechaInicio.addEventListener('change', () => {
+        validarFechasReservadas();
+        calcularPrecio();
+    });
+    fechaFin.addEventListener('change', () => {
+        validarFechasReservadas();
+        calcularPrecio();
+    });
     form.addEventListener('submit', enviarReserva);
     
     // Cerrar modal al hacer clic fuera
@@ -112,6 +136,40 @@ function setupFormListeners() {
             event.target.style.display = 'none';
         }
     };
+}
+
+// ==================== VALIDAR FECHAS RESERVADAS ====================
+function validarFechasReservadas() {
+    const fechaInicio = document.getElementById('fechaInicio');
+    const fechaFin = document.getElementById('fechaFin');
+    const ocupadasStr = fechaInicio.getAttribute('data-unavailable') || '';
+    const ocupadas = ocupadasStr ? ocupadasStr.split(',') : [];
+    
+    if (!fechaInicio.value || !fechaFin.value) return;
+    
+    const inicio = new Date(fechaInicio.value);
+    const fin = new Date(fechaFin.value);
+    
+    let fechaActual = new Date(inicio);
+    let hayConflicto = false;
+    
+    while (fechaActual <= fin) {
+        const fechaStr = fechaActual.toISOString().split('T')[0];
+        if (ocupadas.includes(fechaStr)) {
+            hayConflicto = true;
+            break;
+        }
+        fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+    
+    if (hayConflicto) {
+        fechaInicio.style.borderColor = '#f44336';
+        fechaFin.style.borderColor = '#f44336';
+        mostrarError('Algunas fechas seleccionadas ya están reservadas (se muestran en rojo)');
+    } else {
+        fechaInicio.style.borderColor = '';
+        fechaFin.style.borderColor = '';
+    }
 }
 
 // ==================== CALCULAR PRECIO ====================
@@ -140,20 +198,8 @@ async function calcularPrecio() {
             return;
         }
         
-        // Actualizar UI con precios
-        document.getElementById('noches').textContent = data.noches;
-        document.getElementById('precioBase').textContent = `$${data.precio_base}`;
-        document.getElementById('precioTotal').textContent = `$${data.precio_total}`;
-        
-        const descuentoRow = document.getElementById('descuentoRow');
-        if (data.descuento && data.descuento > 0) {
-            descuentoRow.style.display = 'flex';
-            document.getElementById('descuento').textContent = `-$${data.descuento}`;
-        } else {
-            descuentoRow.style.display = 'none';
-        }
-        
-        document.getElementById('precioSection').style.display = 'block';
+        // Ocultar precios pero guardar en memoria para después
+        document.getElementById('precioSection').style.display = 'none';
         
     } catch (error) {
         console.error('Error calculando precio:', error);
@@ -167,15 +213,24 @@ async function enviarReserva(e) {
     
     const email = document.getElementById('emailCliente').value.trim();
     const telefono = document.getElementById('telefonoCliente').value.trim();
+    const fechaInicio = document.getElementById('fechaInicio');
+    const fechaFin = document.getElementById('fechaFin');
     
-    // Validar que teléfono esté completo
+    // Validar teléfono
     if (!telefono) {
         mostrarError('Debes proporcionar un Teléfono');
         return;
     }
     
+    // Validar email si se proporciona
     if (email && !email.includes('@')) {
         mostrarError('El email no es válido');
+        return;
+    }
+    
+    // Verificar que no haya fechas en rojo (reservadas)
+    if (fechaInicio.style.borderColor === 'rgb(244, 67, 54)' || fechaFin.style.borderColor === 'rgb(244, 67, 54)') {
+        mostrarError('No puedes reservar fechas que ya están ocupadas');
         return;
     }
     
@@ -224,17 +279,15 @@ function mostrarExito(data) {
     const nombreCliente = document.getElementById('nombreCliente').value;
     const fechaInicio = document.getElementById('fechaInicio').value;
     const fechaFin = document.getElementById('fechaFin').value;
-    const emailCliente = document.getElementById('emailCliente').value;
-    const precioTotal = document.getElementById('precioTotal').textContent;
-    const emailMsg = emailCliente ? `Se envió confirmación a ${emailCliente}` : 'Te contactaremos por WhatsApp';
+    const whatsappLink = 'https://wa.me/5493513433116?text=Hola%20quiero%20confirmar%20mi%20reserva%20para%20' + nombreCliente;
     
     mensaje.innerHTML = `
         <p><strong>${selectedDomo.nombre}</strong></p>
         <p style="margin: 12px 0; font-size: 14px;">Nombre: ${nombreCliente}</p>
         <p style="margin: 12px 0; font-size: 14px;">Entrada: <strong>${fechaInicio}</strong></p>
         <p style="margin: 12px 0; font-size: 14px;">Salida: <strong>${fechaFin}</strong></p>
-        <p style="margin: 20px 0; font-size: 18px; color: #4caf50;"><strong>${precioTotal}</strong></p>
-        <p style="margin-top: 15px; font-size: 13px; color: #666;">${emailMsg}</p>
+        <p style="margin: 20px 0; font-size: 14px; color: #666;">Completá tu reserva por WhatsApp:</p>
+        <a href="${whatsappLink}" target="_blank" class="btn btn-primary" style="display: inline-block; margin-top: 12px; text-decoration: none; color: white;">💬 Confirmar por WhatsApp</a>
     `;
     
     reservaModal.style.display = 'none';

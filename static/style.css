@@ -1062,6 +1062,16 @@ table tr.cancelled td {
     }
 }
 
+/* ==================== INPUT DATE STYLING ==================== */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+}
+
+/* Mostrar fechas deshabilitadas en rojo mediante CSS personalizado */
+input[type="date"]:invalid {
+    color: #f44336;
+}
+
 @media (max-width: 480px) {
     body {
         padding: 10px;

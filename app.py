@@ -188,14 +188,14 @@ def get_disponibilidad(domo_id):
     """Retorna las fechas ocupadas de un domo"""
     reservas = Reserva.query.filter_by(domo_id=domo_id, estado='confirmada').all()
     
-    fechas_ocupadas = []
+    ocupadas = []
     for reserva in reservas:
         fecha_actual = reserva.fecha_inicio
         while fecha_actual <= reserva.fecha_fin:
-            fechas_ocupadas.append(fecha_actual.isoformat())
+            ocupadas.append(fecha_actual.isoformat())
             fecha_actual += timedelta(days=1)
     
-    return jsonify({'fechas_ocupadas': fechas_ocupadas}), 200
+    return jsonify({'ocupadas': ocupadas}), 200
 
 @app.route('/api/calcular-precio', methods=['POST'])
 def calcular_precio():
