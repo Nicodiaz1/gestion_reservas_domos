@@ -212,6 +212,8 @@ function construirCalendario() {
 function cambiarMes(incremento) {
     calendarioMes.setMonth(calendarioMes.getMonth() + incremento);
     construirCalendario();
+}
+
 // ==================== SELECCIONAR RANGO DE FECHAS ====================
 function seleccionarFechaRango(fechaStr) {
     if (!fechaInicioTemp) {
