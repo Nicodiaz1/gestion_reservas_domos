@@ -1,0 +1,317 @@
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timedelta
+from functools import wraps
+import os
+import json
+from config import Config
+from models import db, Domo, Reserva, Configuracion, Feriado
+
+app = Flask(__name__)
+app.config.from_object(Config)
+
+db.init_app(app)
+
+def admin_required(f):
+    """Decorador para rutas que requieren autenticación de admin"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_logged_in' not in session:
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# ==================== INICIALIZACIÓN ====================
+
+@app.before_request
+def create_tables():
+    """Crea las tablas si no existen"""
+    try:
+        db.create_all()
+    except:
+        pass
+
+@app.route('/init-db', methods=['POST'])
+def init_db_route():
+    """Inicializa la base de datos con datos de ejemplo"""
+    db.drop_all()
+    db.create_all()
+    
+    # Crear domos
+    domos_data = [
+        Domo(nombre='Domo 1', descripcion='Domo frente al bosque', capacidad=2, precio_semana=100, precio_fin_semana=150),
+        Domo(nombre='Domo 2', descripcion='Domo con vista al lago', capacidad=2, precio_semana=100, precio_fin_semana=150),
+        Domo(nombre='Domo 3', descripcion='Domo premium', capacidad=2, precio_semana=120, precio_fin_semana=180),
+    ]
+    
+    for domo in domos_data:
+        db.session.add(domo)
+    
+    db.session.commit()
+    
+    return jsonify({'mensaje': 'Base de datos inicializada'}), 200
+
+# ==================== RUTAS PÚBLICAS ====================
+
+@app.route('/')
+def index():
+    """Página principal con calendario de reservas"""
+    domos = Domo.query.all()
+    return render_template('index.html', domos=domos)
+
+@app.route('/api/disponibilidad/<int:domo_id>')
+def get_disponibilidad(domo_id):
+    """Retorna las fechas ocupadas de un domo"""
+    reservas = Reserva.query.filter_by(domo_id=domo_id, estado='confirmada').all()
+    
+    fechas_ocupadas = []
+    for reserva in reservas:
+        fecha_actual = reserva.fecha_inicio
+        while fecha_actual <= reserva.fecha_fin:
+            fechas_ocupadas.append(fecha_actual.isoformat())
+            fecha_actual += timedelta(days=1)
+    
+    return jsonify({'fechas_ocupadas': fechas_ocupadas}), 200
+
+@app.route('/api/calcular-precio', methods=['POST'])
+def calcular_precio():
+    """Calcula el precio de una reserva según fechas y domo"""
+    data = request.json
+    domo_id = data.get('domo_id')
+    fecha_inicio_str = data.get('fecha_inicio')
+    fecha_fin_str = data.get('fecha_fin')
+    
+    try:
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+    except:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+    
+    domo = Domo.query.get(domo_id)
+    if not domo:
+        return jsonify({'error': 'Domo no encontrado'}), 404
+    
+    # Calcular cantidad de noches
+    cantidad_noches = (fecha_fin - fecha_inicio).days
+    if cantidad_noches <= 0:
+        return jsonify({'error': 'La fecha final debe ser posterior a la inicial'}), 400
+    
+    # Calcular precio
+    precio_total = 0
+    fecha_actual = fecha_inicio
+    feriados = {f.fecha for f in Feriado.query.all()}
+    
+    while fecha_actual < fecha_fin:
+        # Verificar si es feriado, fin de semana o semana
+        es_feriado = fecha_actual in feriados
+        es_fin_semana = fecha_actual.weekday() >= 4  # Viernes=4, Sábado=5, Domingo=6
+        
+        if es_feriado or es_fin_semana:
+            precio_total += domo.precio_fin_semana
+        else:
+            precio_total += domo.precio_semana
+        
+        fecha_actual += timedelta(days=1)
+    
+    # Aplicar descuento si aplica
+    descuento = 0
+    descuentos_config = Configuracion.query.filter_by(clave='descuentos').first()
+    descuentos = json.loads(descuentos_config.valor) if descuentos_config else {}
+    
+    for dias_minimo, porcentaje in sorted(descuentos.items(), key=lambda x: -int(x[0])):
+        if cantidad_noches >= int(dias_minimo):
+            descuento = porcentaje
+            break
+    
+    precio_con_descuento = precio_total * (1 - descuento)
+    
+    return jsonify({
+        'precio_original': precio_total,
+        'descuento_porcentaje': descuento * 100,
+        'precio_final': precio_con_descuento,
+        'cantidad_noches': cantidad_noches
+    }), 200
+
+@app.route('/api/crear-reserva', methods=['POST'])
+def crear_reserva():
+    """Crea una nueva reserva"""
+    data = request.json
+    
+    try:
+        fecha_inicio = datetime.strptime(data['fecha_inicio'], '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(data['fecha_fin'], '%Y-%m-%d').date()
+    except:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+    
+    # Verificar disponibilidad
+    conflicto = Reserva.query.filter(
+        Reserva.domo_id == data['domo_id'],
+        Reserva.estado == 'confirmada',
+        Reserva.fecha_inicio <= fecha_fin,
+        Reserva.fecha_fin >= fecha_inicio
+    ).first()
+    
+    if conflicto:
+        return jsonify({'error': 'Estas fechas no están disponibles'}), 409
+    
+    domo = Domo.query.get(data['domo_id'])
+    cantidad_noches = (fecha_fin - fecha_inicio).days
+    
+    reserva = Reserva(
+        domo_id=data['domo_id'],
+        nombre_cliente=data['nombre'],
+        email=data['email'],
+        telefono=data.get('telefono', ''),
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        cantidad_noches=cantidad_noches,
+        precio_total=data['precio_final'],
+        descuento_aplicado=data.get('descuento_porcentaje', 0),
+        estado='confirmada'
+    )
+    
+    db.session.add(reserva)
+    db.session.commit()
+    
+    return jsonify({
+        'mensaje': 'Reserva creada exitosamente',
+        'id_reserva': reserva.id
+    }), 201
+
+# ==================== RUTAS ADMIN ====================
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Login del administrador"""
+    if request.method == 'POST':
+        contrasenia = request.form.get('contrasenia')
+        if contrasenia == Config.ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        else:
+            return render_template('admin_login.html', error='Contraseña incorrecta'), 401
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Logout del administrador"""
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    """Panel de control del administrador"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/api/admin/reservas')
+@admin_required
+def get_reservas_admin():
+    """Obtiene todas las reservas (solo admin)"""
+    reservas = Reserva.query.all()
+    return jsonify([r.to_dict() for r in reservas]), 200
+
+@app.route('/api/admin/domos')
+@admin_required
+def get_domos_admin():
+    """Obtiene todos los domos (solo admin)"""
+    domos = Domo.query.all()
+    return jsonify([d.to_dict() for d in domos]), 200
+
+@app.route('/api/admin/domo/<int:domo_id>', methods=['PUT'])
+@admin_required
+def actualizar_domo(domo_id):
+    """Actualiza los precios de un domo"""
+    data = request.json
+    domo = Domo.query.get(domo_id)
+    
+    if not domo:
+        return jsonify({'error': 'Domo no encontrado'}), 404
+    
+    if 'precio_semana' in data:
+        domo.precio_semana = data['precio_semana']
+    if 'precio_fin_semana' in data:
+        domo.precio_fin_semana = data['precio_fin_semana']
+    if 'descripcion' in data:
+        domo.descripcion = data['descripcion']
+    
+    db.session.commit()
+    return jsonify({'mensaje': 'Domo actualizado', 'domo': domo.to_dict()}), 200
+
+@app.route('/api/admin/reserva/<int:reserva_id>', methods=['DELETE'])
+@admin_required
+def cancelar_reserva(reserva_id):
+    """Cancela una reserva"""
+    reserva = Reserva.query.get(reserva_id)
+    
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+    
+    reserva.estado = 'cancelada'
+    db.session.commit()
+    
+    return jsonify({'mensaje': 'Reserva cancelada'}), 200
+
+@app.route('/api/admin/feriados', methods=['GET', 'POST'])
+@admin_required
+def gestionar_feriados():
+    """Gestiona los feriados"""
+    if request.method == 'GET':
+        feriados = Feriado.query.all()
+        return jsonify([f.to_dict() for f in feriados]), 200
+    
+    if request.method == 'POST':
+        data = request.json
+        try:
+            fecha = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
+        except:
+            return jsonify({'error': 'Formato de fecha inválido'}), 400
+        
+        feriado = Feriado(fecha=fecha, nombre=data['nombre'])
+        db.session.add(feriado)
+        db.session.commit()
+        
+        return jsonify({'mensaje': 'Feriado agregado', 'feriado': feriado.to_dict()}), 201
+
+@app.route('/api/admin/feriado/<int:feriado_id>', methods=['DELETE'])
+@admin_required
+def eliminar_feriado(feriado_id):
+    """Elimina un feriado"""
+    feriado = Feriado.query.get(feriado_id)
+    
+    if not feriado:
+        return jsonify({'error': 'Feriado no encontrado'}), 404
+    
+    db.session.delete(feriado)
+    db.session.commit()
+    
+    return jsonify({'mensaje': 'Feriado eliminado'}), 200
+
+@app.route('/api/admin/descuentos', methods=['GET', 'PUT'])
+@admin_required
+def gestionar_descuentos():
+    """Gestiona los descuentos por cantidad de días"""
+    if request.method == 'GET':
+        config = Configuracion.query.filter_by(clave='descuentos').first()
+        if config:
+            return jsonify(json.loads(config.valor)), 200
+        return jsonify({}), 200
+    
+    if request.method == 'PUT':
+        data = request.json
+        config = Configuracion.query.filter_by(clave='descuentos').first()
+        
+        if not config:
+            config = Configuracion(clave='descuentos', valor=json.dumps(data), tipo='json')
+            db.session.add(config)
+        else:
+            config.valor = json.dumps(data)
+        
+        db.session.commit()
+        return jsonify({'mensaje': 'Descuentos actualizados'}), 200
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, port=5000)

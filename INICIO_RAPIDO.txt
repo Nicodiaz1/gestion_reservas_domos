@@ -1,0 +1,91 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                  SISTEMA DE RESERVAS PARA DOMOS - INICIO RÁPIDO          ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+🚀 PASOS PARA EJECUTAR:
+
+1. INSTALAR DEPENDENCIAS
+   $ pip install -r requirements.txt
+
+2. EJECUTAR LA APLICACIÓN
+   $ python app.py
+
+3. ABRIR EN EL NAVEGADOR
+   http://localhost:5000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 ACCESOS:
+
+👤 USUARIO NORMAL (RESERVAR)
+   • URL: http://localhost:5000
+   • Ver domos disponibles
+   • Seleccionar fechas en calendario
+   • Ver precios en tiempo real
+   • Hacer reserva
+
+👨‍💼 ADMINISTRADOR (GESTIONAR)
+   • URL: http://localhost:5000/admin/login
+   • Contraseña: domos2025
+   • Gestionar precios
+   • Ver todas las reservas
+   • Agregar feriados
+   • Configurar descuentos
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️ CONFIGURACIÓN:
+
+Para cambiar la contraseña del admin:
+   Editar: config.py → ADMIN_PASSWORD = 'nueva_contraseña'
+
+Para cambiar precios por defecto:
+   Editar: config.py → PRECIOS_DEFAULT
+
+Para agregar más domos:
+   Editar: app.py → ruta /init-db
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 ARCHIVOS PRINCIPALES:
+
+app.py           → Backend (Flask) - Rutas y lógica
+config.py        → Configuración (contraseña, precios)
+models.py        → Modelos de base de datos
+templates/       → Páginas HTML
+static/          → CSS y JavaScript
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✨ CARACTERÍSTICAS PRINCIPALES:
+
+✅ Calendario interactivo con disponibilidad real
+✅ Cálculo automático de precios (semana/fin de semana)
+✅ Descuentos por cantidad de días (configurable)
+✅ Feriados especiales (configurable)
+✅ Panel admin con contraseña
+✅ Base de datos SQLite integrada
+✅ Interfaz moderna y responsiva
+✅ Sin necesidad de configuración adicional
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIPS:
+
+• La BD se crea automáticamente en la primera ejecución
+• Los precios se sincronizan en tiempo real
+• El calendario muestra días ocupados en rojo
+• Los descuentos se aplican automáticamente
+• Las reservas se guardan en la BD
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❓ PROBLEMAS?
+
+Si no carga, verifica:
+1. Python 3.7+ instalado
+2. Dependencias instaladas (pip install -r requirements.txt)
+3. No haya otro servicio en puerto 5000
+4. Consola del navegador (F12) para errores
+
+¡Listo! El sistema está completamente funcional. Personaliza según tus necesidades.

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-page">
+    <header>
+        <div class="container">
+            <h1>⚙️ Panel Administrativo</h1>
+            <a href="/admin/logout" class="btn btn-danger">Cerrar Sesión</a>
+        </div>
+    </header>
+
+    <main class="container admin-container">
+        <div class="sidebar">
+            <nav>
+                <button class="nav-btn active" data-tab="reservas">📋 Reservas</button>
+                <button class="nav-btn" data-tab="precios">💰 Precios</button>
+                <button class="nav-btn" data-tab="descuentos">🎁 Descuentos</button>
+                <button class="nav-btn" data-tab="feriados">📅 Feriados</button>
+            </nav>
+        </div>
+
+        <div class="content">
+            <!-- TAB: RESERVAS -->
+            <div id="tab-reservas" class="tab-content active">
+                <h2>Gestión de Reservas</h2>
+                <div id="reservasContainer" class="reservas-list">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <!-- TAB: PRECIOS -->
+            <div id="tab-precios" class="tab-content">
+                <h2>Configurar Precios</h2>
+                <div id="preciosContainer" class="precios-grid">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <!-- TAB: DESCUENTOS -->
+            <div id="tab-descuentos" class="tab-content">
+                <h2>Configurar Descuentos</h2>
+                <div id="descuentosContainer" class="descuentos-list">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <!-- TAB: FERIADOS -->
+            <div id="tab-feriados" class="tab-content">
+                <h2>Gestionar Feriados</h2>
+                <div class="agregar-feriado">
+                    <input type="date" id="feriado-fecha" placeholder="Selecciona fecha">
+                    <input type="text" id="feriado-nombre" placeholder="Nombre del feriado">
+                    <button class="btn btn-primary" onclick="agregarFeriado()">Agregar</button>
+                </div>
+                <div id="feriadosContainer" class="feriados-list">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Cambiar tabs
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ========== RESERVAS ==========
+        async function cargarReservas() {
+            try {
+                const res = await fetch('/admin/api/reservas');
+                const reservas = await res.json();
+                
+                const html = reservas.map(r => `
+                    <div class="reserva-card">
+                        <h3>${r.domo_nombre}</h3>
+                        <p><strong>Cliente:</strong> ${r.nombre_cliente}</p>
+                        <p><strong>Email:</strong> ${r.email_cliente || 'N/A'}</p>
+                        <p><strong>Teléfono:</strong> ${r.telefono_cliente || 'N/A'}</p>
+                        <p><strong>Fechas:</strong> ${r.fecha_inicio} a ${r.fecha_fin}</p>
+                        <p><strong>Precio:</strong> $${r.precio_total}</p>
+                        <p><strong>Estado:</strong> <span class="status ${r.estado}">${r.estado}</span></p>
+                        ${r.estado === 'confirmada' ? `<button class="btn btn-danger" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ''}
+                    </div>
+                `).join('');
+                
+                document.getElementById('reservasContainer').innerHTML = html || '<p>Sin reservas</p>';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function cancelarReserva(reservaId) {
+            if (!confirm('¿Cancelar esta reserva?')) return;
+            try {
+                const res = await fetch(`/admin/api/cancelar-reserva/${reservaId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    cargarReservas();
+                    alert('Reserva cancelada');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // ========== PRECIOS ==========
+        async function cargarPrecios() {
+            try {
+                const res = await fetch('/admin/api/precios');
+                const precios = await res.json();
+                
+                const html = precios.map(p => `
+                    <div class="precio-card">
+                        <h3>${p.domo_nombre}</h3>
+                        <p><strong>${p.tipo_dia.replace('_', ' ').toUpperCase()}</strong></p>
+                        <div class="precio-input">
+                            <input type="number" id="precio-${p.id}" value="${p.precio}" step="0.01">
+                            <button class="btn btn-primary" onclick="actualizarPrecio(${p.id})">Guardar</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('preciosContainer').innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function actualizarPrecio(precioId) {
+            const precio = document.getElementById(`precio-${precioId}`).value;
+            try {
+                const res = await fetch('/admin/api/actualizar-precio', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ precio_id: precioId, precio: precio })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Precio actualizado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // ========== DESCUENTOS ==========
+        async function cargarDescuentos() {
+            try {
+                const res = await fetch('/admin/api/descuentos');
+                const descuentos = await res.json();
+                
+                const html = descuentos.map(d => `
+                    <div class="descuento-card">
+                        <p><strong>A partir de ${d.min_dias} días:</strong></p>
+                        <div class="descuento-input">
+                            <input type="number" id="desc-${d.id}" value="${d.porcentaje_descuento}" step="0.1">%
+                            <button class="btn btn-primary" onclick="actualizarDescuento(${d.id})">Guardar</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('descuentosContainer').innerHTML = html;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function actualizarDescuento(descuentoId) {
+            const porcentaje = document.getElementById(`desc-${descuentoId}`).value;
+            try {
+                const res = await fetch('/admin/api/actualizar-descuento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ descuento_id: descuentoId, porcentaje: porcentaje })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('Descuento actualizado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // ========== FERIADOS ==========
+        async function cargarFeriados() {
+            try {
+                const res = await fetch('/admin/api/feriados');
+                const feriados = await res.json();
+                
+                const html = feriados.map(f => `
+                    <div class="feriado-card">
+                        <p><strong>${f.fecha}</strong> - ${f.nombre}</p>
+                        <button class="btn btn-danger" onclick="eliminarFeriado(${f.id})">Eliminar</button>
+                    </div>
+                `).join('');
+                
+                document.getElementById('feriadosContainer').innerHTML = html || '<p>Sin feriados</p>';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function agregarFeriado() {
+            const fecha = document.getElementById('feriado-fecha').value;
+            const nombre = document.getElementById('feriado-nombre').value;
+            
+            if (!fecha || !nombre) {
+                alert('Completa todos los campos');
+                return;
+            }
+
+            try {
+                const res = await fetch('/admin/api/agregar-feriado', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fecha, nombre })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('feriado-fecha').value = '';
+                    document.getElementById('feriado-nombre').value = '';
+                    cargarFeriados();
+                    alert('Feriado agregado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarFeriado(feriadoId) {
+            if (!confirm('¿Eliminar este feriado?')) return;
+            try {
+                const res = await fetch(`/admin/api/eliminar-feriado/${feriadoId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    cargarFeriados();
+                    alert('Feriado eliminado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Cargar datos al iniciar
+        cargarReservas();
+        cargarPrecios();
+        cargarDescuentos();
+        cargarFeriados();
+    </script>
+</body>
+</html>

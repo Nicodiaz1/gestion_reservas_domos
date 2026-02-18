@@ -1,0 +1,214 @@
+ESTRUCTURA COMPLETA DEL SISTEMA DE RESERVAS
+═════════════════════════════════════════════════════════════════════════════
+
+sistema_reservas_domos/
+│
+├── 🔧 CONFIGURACIÓN
+│   ├── config.py              → Contraseña admin, precios por defecto
+│   ├── requirements.txt       → pip install -r requirements.txt
+│   ├── README.md              → Documentación completa
+│   ├── INICIO_RAPIDO.txt      → Pasos para ejecutar
+│   └── ESTRUCTURA.txt         → Este archivo
+│
+├── 🐍 BACKEND (Python/Flask)
+│   ├── app.py                 → Servidor principal
+│   │   ├── Rutas públicas
+│   │   │   ├── GET  /                      → Página principal
+│   │   │   ├── GET  /api/disponibilidad/<id>    → Fechas ocupadas
+│   │   │   ├── POST /api/calcular-precio        → Precio dinámico
+│   │   │   └── POST /api/crear-reserva          → Nueva reserva
+│   │   │
+│   │   └── Rutas admin
+│   │       ├── GET  /admin/login          → Login
+│   │       ├── GET  /admin/dashboard      → Panel de control
+│   │       ├── GET  /admin/logout         → Logout
+│   │       ├── GET  /api/admin/reservas   → Ver reservas
+│   │       ├── GET  /api/admin/domos      → Ver domos
+│   │       ├── PUT  /api/admin/domo/<id>  → Actualizar precios
+│   │       ├── DEL  /api/admin/reserva/<id> → Cancelar reserva
+│   │       ├── GET  /api/admin/feriados   → Ver feriados
+│   │       ├── POST /api/admin/feriados   → Agregar feriado
+│   │       ├── DEL  /api/admin/feriado/<id> → Eliminar feriado
+│   │       ├── GET  /api/admin/descuentos → Ver descuentos
+│   │       └── PUT  /api/admin/descuentos → Actualizar descuentos
+│   │
+│   └── models.py              → Modelos SQLAlchemy
+│       ├── class Domo         → Información de domos
+│       ├── class Reserva      → Datos de reservas
+│       ├── class Feriado      → Fechas especiales
+│       └── class Configuracion → Descuentos y config
+│
+├── 🎨 FRONTEND (HTML/CSS/JS)
+│   │
+│   ├── templates/
+│   │   ├── index.html               → Página principal (3 domos)
+│   │   │   ├── Navbar
+│   │   │   ├── Sección para cada domo
+│   │   │   │   ├── Calendario interactivo
+│   │   │   │   ├── Formulario de reserva
+│   │   │   │   └── Mostrador de precio
+│   │   │   └── Footer
+│   │   │
+│   │   ├── admin_login.html         → Página de login
+│   │   │   ├── Logo
+│   │   │   ├── Campo contraseña
+│   │   │   └── Botón de ingreso
+│   │   │
+│   │   └── admin_dashboard.html     → Panel administrativo
+│   │       ├── Navbar de tabs
+│   │       ├── TAB 1: Domos
+│   │       │   └── Editar precios
+│   │       ├── TAB 2: Descuentos
+│   │       │   └── Configurar por días
+│   │       ├── TAB 3: Feriados
+│   │       │   ├── Agregar nuevo
+│   │       │   └── Tabla de feriados
+│   │       └── TAB 4: Reservas
+│   │           └── Tabla completa + cancelar
+│   │
+│   └── static/
+│       ├── style.css                → Estilos (9 KB)
+│       │   ├── Variables globales
+│       │   ├── Login
+│       │   ├── Calendario
+│       │   ├── Formularios
+│       │   ├── Tabla
+│       │   ├── Admin
+│       │   └── Responsive (mobile)
+│       │
+│       └── script.js                → JavaScript (20 KB)
+│           ├── CalendarManager
+│           │   ├── Renderización
+│           │   ├── Selección de fechas
+│           │   ├── Cálculo de precio
+│           │   └── Carga de disponibilidad
+│           │
+│           ├── Funciones de reserva
+│           │   └── crearReserva()
+│           │
+│           └── Funciones admin
+│               ├── loadAdminReservas()
+│               ├── loadAdminDomos()
+│               ├── loadAdminFeriados()
+│               ├── loadAdminDescuentos()
+│               ├── actualizarDomo()
+│               ├── agregarFeriado()
+│               ├── guardarDescuentos()
+│               └── cancelarReserva()
+│
+├── 💾 BASE DE DATOS (SQLite)
+│   └── domos_reservas.db      → Se crea automáticamente
+│       │
+│       ├── Tabla: domos
+│       │   ├── id (PK)
+│       │   ├── nombre
+│       │   ├── descripcion
+│       │   ├── capacidad
+│       │   ├── precio_semana
+│       │   └── precio_fin_semana
+│       │
+│       ├── Tabla: reservas
+│       │   ├── id (PK)
+│       │   ├── domo_id (FK)
+│       │   ├── nombre_cliente
+│       │   ├── email
+│       │   ├── telefono
+│       │   ├── fecha_inicio
+│       │   ├── fecha_fin
+│       │   ├── cantidad_noches
+│       │   ├── precio_total
+│       │   ├── descuento_aplicado
+│       │   ├── estado
+│       │   └── fecha_creacion
+│       │
+│       ├── Tabla: feriados
+│       │   ├── id (PK)
+│       │   ├── fecha (UNIQUE)
+│       │   └── nombre
+│       │
+│       └── Tabla: configuracion
+│           ├── clave (PK)
+│           ├── valor
+│           └── tipo
+│
+└── 📋 FLUJO DE DATOS
+    │
+    ├── CLIENTE RESERVANDO:
+    │   1. Carga index.html
+    │   2. JavaScript carga script.js
+    │   3. CalendarManager obtiene /api/disponibilidad/1
+    │   4. Usuario selecciona 2 fechas
+    │   5. POST /api/calcular-precio → recibe precio
+    │   6. Usuario completa formulario
+    │   7. POST /api/crear-reserva → se guarda en BD
+    │   8. Calendario se actualiza
+    │
+    ├── ADMIN CAMBIANDO PRECIOS:
+    │   1. Va a /admin/login
+    │   2. Ingresa contraseña (validación en sesión)
+    │   3. Carga admin_dashboard.html
+    │   4. GET /api/admin/domos → carga precios
+    │   5. Admin modifica valores
+    │   6. PUT /api/admin/domo/1 → actualiza BD
+    │   7. Próximas reservas usan nuevos precios
+    │
+    └── ADMIN AGREGANDO FERIADO:
+        1. Tab "Feriados"
+        2. Completa fecha y nombre
+        3. POST /api/admin/feriados → se guarda
+        4. Calendario ahora marca como fin de semana
+
+═════════════════════════════════════════════════════════════════════════════
+
+TECNOLOGÍAS:
+
+Backend:
+  ✓ Python 3.7+
+  ✓ Flask 2.3.2 (Framework web)
+  ✓ Flask-SQLAlchemy 3.0.5 (ORM)
+  ✓ SQLite (Base de datos)
+
+Frontend:
+  ✓ HTML5 (Estructura)
+  ✓ CSS3 (Estilos + Responsive)
+  ✓ JavaScript vanilla (Sin librerías externas)
+
+═════════════════════════════════════════════════════════════════════════════
+
+CÁLCULO DE PRECIOS:
+
+Algoritmo:
+  1. Recorre cada noche de la reserva
+  2. Para cada noche:
+     - ¿Es feriado? → Precio fin de semana
+     - ¿Es sábado/domingo? → Precio fin de semana
+     - Sino → Precio semana
+  3. Suma todos los precios
+  4. Aplica descuento según cantidad de noches:
+     - 2+ noches: -5% (configurable)
+     - 3+ noches: -10% (configurable)
+     - etc.
+  5. Retorna precio final
+
+Ejemplo:
+  Domo 1: $100 semana, $150 fin de semana
+  Reserva: Lunes 1 a Viernes 5 (4 noches)
+  - Lunes: $100
+  - Martes: $100
+  - Miércoles: $100
+  - Jueves: $100
+  Total sin descuento: $400
+  Descuento por 4 noches: -10% = -$40
+  Total con descuento: $360
+
+═════════════════════════════════════════════════════════════════════════════
+
+SEGURIDAD:
+
+✓ Contraseña del admin hasheada en sesión
+✓ CSRF protection en forms (Flask)
+✓ Validación de entrada en backend
+✓ SQLite con prepared statements (SQLAlchemy)
+✓ No expone contraseña en cliente
+
+═════════════════════════════════════════════════════════════════════════════
