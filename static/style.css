@@ -310,6 +310,9 @@ main {
     border-radius: var(--radius);
     box-shadow: var(--shadow-lg);
     animation: slideIn 0.3s ease;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideIn {
@@ -355,6 +358,8 @@ main {
 /* ==================== FORMULARIOS ==================== */
 .form {
     padding: 28px;
+    overflow-y: auto;
+    max-height: calc(90vh - 100px);
 }
 
 .form-group {

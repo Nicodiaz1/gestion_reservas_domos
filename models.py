@@ -38,17 +38,12 @@ class Reserva(db.Model):
     
     # Información del cliente
     nombre_cliente = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(100), nullable=False)
-    telefono = db.Column(db.String(20))
+    email_cliente = db.Column(db.String(100))
+    telefono_cliente = db.Column(db.String(20))
     
     # Fechas de la reserva
     fecha_inicio = db.Column(db.Date, nullable=False)
     fecha_fin = db.Column(db.Date, nullable=False)
-    
-    # Información de precio
-    cantidad_noches = db.Column(db.Integer, nullable=False)
-    precio_total = db.Column(db.Float, nullable=False)
-    descuento_aplicado = db.Column(db.Float, default=0.0)
     
     # Estado
     estado = db.Column(db.String(20), default='confirmada')  # confirmada, cancelada
@@ -59,13 +54,10 @@ class Reserva(db.Model):
             'id': self.id,
             'domo_id': self.domo_id,
             'nombre_cliente': self.nombre_cliente,
-            'email': self.email,
-            'telefono': self.telefono,
+            'email_cliente': self.email_cliente,
+            'telefono_cliente': self.telefono_cliente,
             'fecha_inicio': self.fecha_inicio.isoformat(),
             'fecha_fin': self.fecha_fin.isoformat(),
-            'cantidad_noches': self.cantidad_noches,
-            'precio_total': self.precio_total,
-            'descuento_aplicado': self.descuento_aplicado,
             'estado': self.estado
         }
 
@@ -91,11 +83,13 @@ class Feriado(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     fecha = db.Column(db.Date, unique=True, nullable=False)
-    nombre = db.Column(db.String(100), nullable=False)
+    nombre = db.Column(db.String(100))
+    descripcion = db.Column(db.String(200))
     
     def to_dict(self):
         return {
             'id': self.id,
             'fecha': self.fecha.isoformat(),
-            'nombre': self.nombre
+            'nombre': self.nombre or self.descripcion,
+            'descripcion': self.descripcion
         }

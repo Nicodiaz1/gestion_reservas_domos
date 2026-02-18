@@ -32,25 +32,25 @@ def crear_domos_defecto():
         
         domos = [
             Domo(
-                nombre='Domo Deluxe',
-                descripcion='Experiencia premium con vistas a la naturaleza, baño privado y terraza',
+                nombre='Domo Aguaribay',
+                descripcion='Experiencia única rodeado de naturaleza, con todas las comodidades',
                 capacidad=2,
-                precio_semana=100,
-                precio_fin_semana=150
+                precio_semana=75000,
+                precio_fin_semana=110000
             ),
             Domo(
-                nombre='Domo Comfort',
-                descripcion='Confortables glamping con acceso a río y actividades de aventura',
-                capacidad=3,
-                precio_semana=100,
-                precio_fin_semana=150
+                nombre='Domo Espinillo',
+                descripcion='Confort y tranquilidad en un entorno natural privilegiado',
+                capacidad=2,
+                precio_semana=75000,
+                precio_fin_semana=110000
             ),
             Domo(
-                nombre='Domo Premium',
-                descripcion='Lujo absoluto en la montaña con vista panorámica y piscina privada',
-                capacidad=4,
-                precio_semana=120,
-                precio_fin_semana=180
+                nombre='Domo Eucalipto',
+                descripcion='Relax total con vistas espectaculares y máxima privacidad',
+                capacidad=2,
+                precio_semana=75000,
+                precio_fin_semana=110000
             )
         ]
         for domo in domos:
@@ -67,9 +67,50 @@ def init_db():
         try:
             db.create_all()
             crear_domos_defecto()
+            crear_feriados_argentina()
             print("✓ Base de datos inicializada")
         except Exception as e:
             print(f"✗ Error: {e}")
+
+def crear_feriados_argentina():
+    """Crea los feriados de Argentina 2026"""
+    try:
+        # Verificar si ya existen
+        if Feriado.query.first() is not None:
+            return
+        
+        feriados = [
+            # 2026
+            {'fecha': '2026-01-01', 'descripcion': 'Año Nuevo'},
+            {'fecha': '2026-02-16', 'descripcion': 'Carnaval'},
+            {'fecha': '2026-02-17', 'descripcion': 'Carnaval'},
+            {'fecha': '2026-03-24', 'descripcion': 'Día de la Memoria'},
+            {'fecha': '2026-04-02', 'descripcion': 'Día del Veterano'},
+            {'fecha': '2026-04-03', 'descripcion': 'Viernes Santo'},
+            {'fecha': '2026-05-01', 'descripcion': 'Día del Trabajador'},
+            {'fecha': '2026-05-25', 'descripcion': 'Revolución de Mayo'},
+            {'fecha': '2026-06-15', 'descripcion': 'Paso a la Inmortalidad de Güemes'},
+            {'fecha': '2026-06-20', 'descripcion': 'Día de la Bandera'},
+            {'fecha': '2026-07-09', 'descripcion': 'Día de la Independencia'},
+            {'fecha': '2026-08-17', 'descripcion': 'Paso a la Inmortalidad de San Martín'},
+            {'fecha': '2026-10-12', 'descripcion': 'Día del Respeto a la Diversidad Cultural'},
+            {'fecha': '2026-11-23', 'descripcion': 'Día de la Soberanía Nacional'},
+            {'fecha': '2026-12-08', 'descripcion': 'Inmaculada Concepción'},
+            {'fecha': '2026-12-25', 'descripcion': 'Navidad'},
+        ]
+        
+        for f in feriados:
+            feriado = Feriado(
+                fecha=datetime.strptime(f['fecha'], '%Y-%m-%d').date(),
+                descripcion=f['descripcion']
+            )
+            db.session.add(feriado)
+        
+        db.session.commit()
+        print("✓ Feriados de Argentina creados")
+    except Exception as e:
+        print(f"✗ Error creando feriados: {e}")
+        db.session.rollback()
 
 # Inicializar al crear la app
 init_db()
@@ -228,14 +269,11 @@ def crear_reserva():
     
     reserva = Reserva(
         domo_id=data['domo_id'],
-        nombre_cliente=data['nombre'],
-        email=data['email'],
-        telefono=data.get('telefono', ''),
+        nombre_cliente=data['nombre_cliente'],
+        email_cliente=data.get('email_cliente', ''),
+        telefono_cliente=data.get('telefono_cliente', ''),
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
-        cantidad_noches=cantidad_noches,
-        precio_total=data['precio_final'],
-        descuento_aplicado=data.get('descuento_porcentaje', 0),
         estado='confirmada'
     )
     
@@ -243,8 +281,9 @@ def crear_reserva():
     db.session.commit()
     
     return jsonify({
+        'success': True,
         'mensaje': 'Reserva creada exitosamente',
-        'id_reserva': reserva.id
+        'reserva_id': reserva.id
     }), 201
 
 # ==================== RUTAS ADMIN ====================

@@ -165,13 +165,27 @@ async function calcularPrecio() {
 async function enviarReserva(e) {
     e.preventDefault();
     
+    const email = document.getElementById('emailCliente').value.trim();
+    const telefono = document.getElementById('telefonoCliente').value.trim();
+    
+    // Validar que al menos uno de email o teléfono esté completo
+    if (!email && !telefono) {
+        mostrarError('Debes proporcionar al menos Email o Teléfono');
+        return;
+    }
+    
+    if (email && !email.includes('@')) {
+        mostrarError('El email no es válido');
+        return;
+    }
+    
     const datos = {
         domo_id: parseInt(document.getElementById('domoId').value),
         fecha_inicio: document.getElementById('fechaInicio').value,
         fecha_fin: document.getElementById('fechaFin').value,
         nombre_cliente: document.getElementById('nombreCliente').value,
-        email_cliente: document.getElementById('emailCliente').value,
-        telefono_cliente: document.getElementById('telefonoCliente').value
+        email_cliente: email,
+        telefono_cliente: telefono
     };
     
     try {
