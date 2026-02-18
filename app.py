@@ -23,7 +23,7 @@ def admin_required(f):
 
 # ==================== INICIALIZACIÓN ====================
 
-@app.with_appcontext
+@app.before_first_request
 def create_tables():
     """Crea las tablas si no existen"""
     try:
@@ -31,29 +31,28 @@ def create_tables():
     except Exception as e:
         print(f"Error creating tables: {e}")
 
-# Crear tablas al iniciar
-with app.app_context():
-    create_tables()
-
 @app.route('/init-db', methods=['POST'])
 def init_db_route():
     """Inicializa la base de datos con datos de ejemplo"""
-    db.drop_all()
-    db.create_all()
-    
-    # Crear domos
-    domos_data = [
-        Domo(nombre='Domo 1', descripcion='Domo frente al bosque', capacidad=2, precio_semana=100, precio_fin_semana=150),
-        Domo(nombre='Domo 2', descripcion='Domo con vista al lago', capacidad=2, precio_semana=100, precio_fin_semana=150),
-        Domo(nombre='Domo 3', descripcion='Domo premium', capacidad=2, precio_semana=120, precio_fin_semana=180),
-    ]
-    
-    for domo in domos_data:
-        db.session.add(domo)
-    
-    db.session.commit()
-    
-    return jsonify({'mensaje': 'Base de datos inicializada'}), 200
+    try:
+        db.drop_all()
+        db.create_all()
+        
+        # Crear domos
+        domos_data = [
+            Domo(nombre='Domo 1', descripcion='Domo frente al bosque', capacidad=2, precio_semana=100, precio_fin_semana=150),
+            Domo(nombre='Domo 2', descripcion='Domo con vista al lago', capacidad=2, precio_semana=100, precio_fin_semana=150),
+            Domo(nombre='Domo 3', descripcion='Domo premium', capacidad=2, precio_semana=120, precio_fin_semana=180),
+        ]
+        
+        for domo in domos_data:
+            db.session.add(domo)
+        
+        db.session.commit()
+        return jsonify({'mensaje': 'Base de datos inicializada'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 # ==================== RUTAS PÚBLICAS ====================
 
