@@ -309,10 +309,10 @@ def crear_reserva():
         # Insertar reserva usando SQL raw para compatibilidad
         sql_insert = text("""
             INSERT INTO reservas (
-                domo_id, nombre_cliente, email_cliente, telefono_cliente,
+                domo_id, nombre_cliente, email, telefono,
                 fecha_inicio, fecha_fin, estado, fecha_creacion
             ) VALUES (
-                :domo_id, :nombre_cliente, :email_cliente, :telefono_cliente,
+                :domo_id, :nombre_cliente, :email, :telefono,
                 :fecha_inicio, :fecha_fin, 'confirmada', :fecha_creacion
             )
         """)
@@ -320,8 +320,8 @@ def crear_reserva():
         db.session.execute(sql_insert, {
             'domo_id': data['domo_id'],
             'nombre_cliente': data['nombre_cliente'],
-            'email_cliente': email,
-            'telefono_cliente': telefono,
+            'email': email,
+            'telefono': telefono,
             'fecha_inicio': fecha_inicio,
             'fecha_fin': fecha_fin,
             'fecha_creacion': datetime.utcnow()
