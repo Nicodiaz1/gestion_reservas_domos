@@ -97,6 +97,20 @@
                     <div class="form-group" style="flex: 1;">
                         <label>Selecciona tus fechas</label>
                         <div id="calendario" class="calendario-container"></div>
+                        <div class="calendario-leyenda">
+                            <div class="leyenda-item">
+                                <span class="leyenda-color reserved"></span>
+                                <span>Ocupado (sin disponibilidad)</span>
+                            </div>
+                            <div class="leyenda-item">
+                                <span class="leyenda-color checkin"></span>
+                                <span>Inicio de reserva (medio día disponible)</span>
+                            </div>
+                            <div class="leyenda-item">
+                                <span class="leyenda-color checkout"></span>
+                                <span>Fin de reserva (medio día disponible)</span>
+                            </div>
+                        </div>
                         <input type="hidden" id="fechaInicio" required>
                         <input type="hidden" id="fechaFin" required>
                         <div style="display: flex; gap: 20px; margin-top: 16px;">
