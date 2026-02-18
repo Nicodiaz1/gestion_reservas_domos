@@ -4,7 +4,12 @@ from datetime import datetime
 class Config:
     """Configuración general de la aplicación"""
     SECRET_KEY = 'domos2025_secret_key'
-    _database_url = os.environ.get('DATABASE_URL')
+    _database_url = (
+        os.environ.get('DATABASE_URL')
+        or os.environ.get('DATABASE_PUBLIC_URL')
+        or os.environ.get('POSTGRES_URL')
+        or os.environ.get('POSTGRESQL_URL')
+    )
     if not _database_url:
         raise RuntimeError('DATABASE_URL no está configurada')
     if _database_url.startswith('postgresql://'):
