@@ -178,19 +178,24 @@ function construirCalendario() {
         if (esPasada) {
             btn.classList.add('pasada');
             btn.disabled = true;
-        } else if (estaOcupada) {
+        } else if (esInicioReserva && esCheckout) {
+            // Día con checkout y checkin: no hay medio día libre
             btn.classList.add('reserved');
-            // Permitir seleccionar ocupadas, la validación se hace en la función
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else if (esInicioReserva) {
-            // Fechas de inicio de reserva: mostrar con dos colores invertidos
+            // Día de inicio: mitad verde/rojo (se puede terminar otra reserva ese día)
             btn.classList.add('checkin');
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else if (esCheckout) {
-            // Fechas de checkout: se pueden usar como fecha_inicio
+            // Día de checkout: mitad verde/rojo (se puede iniciar otra reserva ese día)
             btn.classList.add('checkout');
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
+        } else if (estaOcupada) {
+            // Noche ocupada completa
+            btn.classList.add('reserved');
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else {
