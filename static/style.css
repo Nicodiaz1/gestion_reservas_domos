@@ -1205,6 +1205,12 @@ input[type="date"]:invalid {
     font-weight: bold;
 }
 
+.calendario-day.checkin {
+    background: linear-gradient(135deg, #4caf50 50%, #f44336 50%);
+    color: white;
+    font-weight: bold;
+}
+
 .calendario-day.checkout.rango-inicio {
     background: linear-gradient(135deg, #4caf50 50%, #f44336 50%);
 }

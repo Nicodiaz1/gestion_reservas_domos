@@ -2,7 +2,8 @@
 let domos = [];
 let selectedDomo = null;
 let fechasOcupadas = [];        // Fechas completamente ocupadas (rojo)
-let fechasCheckout = [];        // Fechas de salida (disponibles como entrada siguiente - naranja)
+let fechasCheckout = [];        // Fechas de salida (disponibles como entrada siguiente)
+let fechasInicioReserva = [];   // Fechas de inicio de reservas (disponibles como fecha_fin)
 let calendarioMes = new Date();
 let fechaInicioTemp = null;
 let fechaFinTemp = null;
@@ -104,10 +105,12 @@ async function abrirReserva(domoId) {
         const data = await res.json();
         fechasOcupadas = data.ocupadas || [];
         fechasCheckout = data.checkouts || [];
+        fechasInicioReserva = data.inicios || [];
     } catch (error) {
         console.error('Error cargando disponibilidad:', error);
         fechasOcupadas = [];
         fechasCheckout = [];
+        fechasInicioReserva = [];
     }
     
     // Inicializar calendario único
@@ -169,18 +172,25 @@ function construirCalendario() {
         
         const esPasada = fecha < hoy;
         const estaOcupada = fechasOcupadas.includes(fechaStr);
+        const esCheckout = fechasCheckout.includes(fechaStr);
+        const esInicioReserva = fechasInicioReserva.includes(fechaStr);
         
         if (esPasada) {
             btn.classList.add('pasada');
             btn.disabled = true;
+        } else if (esInicioReserva) {
+            // Fechas de inicio de reserva: mostrar con dos colores invertidos
+            btn.classList.add('checkin');
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
+        } else if (esCheckout) {
+            // Fechas de checkout: se pueden usar como fecha_inicio
+            btn.classList.add('checkout');
+            btn.disabled = false;
+            btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else if (estaOcupada) {
             btn.classList.add('reserved');
             // Permitir seleccionar ocupadas, la validación se hace en la función
-            btn.disabled = false;
-            btn.onclick = () => seleccionarFechaRango(fechaStr);
-        } else if (fechasCheckout.includes(fechaStr)) {
-            // Fechas de checkout: se pueden usar como fecha_inicio (naranja)
-            btn.classList.add('checkout');
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         } else {

@@ -190,8 +190,12 @@ def get_disponibilidad(domo_id):
     
     ocupadas = []
     checkouts = []
+    inicios = []
     
     for reserva in reservas:
+        # Inicio de reserva
+        inicios.append(reserva.fecha_inicio.isoformat())
+
         # Ocupadas: desde fecha_inicio hasta fecha_fin-1 (noches en que está ocupado)
         fecha_actual = reserva.fecha_inicio
         while fecha_actual < reserva.fecha_fin:
@@ -201,7 +205,7 @@ def get_disponibilidad(domo_id):
         # Checkouts: la fecha_fin se muestra como "checkout" (salida pero disponible como entrada siguiente)
         checkouts.append(reserva.fecha_fin.isoformat())
     
-    return jsonify({'ocupadas': ocupadas, 'checkouts': checkouts}), 200
+    return jsonify({'ocupadas': ocupadas, 'checkouts': checkouts, 'inicios': inicios}), 200
 
 @app.route('/api/calcular-precio', methods=['POST'])
 def calcular_precio():
@@ -295,8 +299,8 @@ def crear_reserva():
             SELECT COUNT(*) as count FROM reservas 
             WHERE domo_id = :domo_id 
             AND estado = 'confirmada'
-            AND fecha_inicio <= :fecha_fin 
-            AND fecha_fin >= :fecha_inicio
+            AND fecha_inicio < :fecha_fin 
+            AND fecha_fin > :fecha_inicio
         """)
         
         result = db.session.execute(sql, {
