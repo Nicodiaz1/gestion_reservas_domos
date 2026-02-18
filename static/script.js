@@ -468,7 +468,8 @@ function mostrarExito(data) {
     const nombreCliente = document.getElementById('nombreCliente').value;
     const fechaInicio = document.getElementById('fechaInicio').value;
     const fechaFin = document.getElementById('fechaFin').value;
-    const whatsappLink = 'https://wa.me/5493513433116?text=Hola%20quiero%20confirmar%20mi%20reserva%20para%20' + nombreCliente;
+    const mensajeWhatsapp = `Hola quiero confirmar mi reserva para ${nombreCliente} en las fechas ${fechaInicio} al ${fechaFin}`;
+    const whatsappLink = `https://wa.me/5493513433116?text=${encodeURIComponent(mensajeWhatsapp)}`;
     
     mensaje.innerHTML = `
         <p><strong>${selectedDomo.nombre}</strong></p>
