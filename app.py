@@ -308,14 +308,46 @@ def crear_reserva():
         
         cantidad_noches = (fecha_fin - fecha_inicio).days
         
+        # Calcular precio total
+        precio_total = 0
+        fecha_actual = fecha_inicio
+        
+        # Obtener feriados
+        try:
+            feriados = {f.fecha for f in Feriado.query.all()}
+        except:
+            feriados = set()
+        
+        while fecha_actual < fecha_fin:
+            es_feriado = fecha_actual in feriados
+            es_fin_semana = fecha_actual.weekday() >= 4  # Viernes=4, Sábado=5, Domingo=6
+            
+            if es_feriado or es_fin_semana:
+                precio_total += domo.precio_fin_semana
+            else:
+                precio_total += domo.precio_semana
+            
+            fecha_actual += timedelta(days=1)
+        
+        # Aplicar descuento si aplica
+        if cantidad_noches >= 7:
+            porcentaje_descuento = 0.15  # 15% por 7+ noches
+        elif cantidad_noches >= 3:
+            porcentaje_descuento = 0.10  # 10% por 3+ noches
+        else:
+            porcentaje_descuento = 0
+        
+        descuento = precio_total * porcentaje_descuento
+        precio_con_descuento = precio_total - descuento
+        
         # Insertar reserva usando SQL raw para compatibilidad
         sql_insert = text("""
             INSERT INTO reservas (
                 domo_id, nombre_cliente, email, telefono,
-                fecha_inicio, fecha_fin, cantidad_noches, estado, fecha_creacion
+                fecha_inicio, fecha_fin, cantidad_noches, precio_total, estado, fecha_creacion
             ) VALUES (
                 :domo_id, :nombre_cliente, :email, :telefono,
-                :fecha_inicio, :fecha_fin, :cantidad_noches, 'confirmada', :fecha_creacion
+                :fecha_inicio, :fecha_fin, :cantidad_noches, :precio_total, 'confirmada', :fecha_creacion
             )
         """)
         
@@ -327,6 +359,7 @@ def crear_reserva():
             'fecha_inicio': fecha_inicio,
             'fecha_fin': fecha_fin,
             'cantidad_noches': cantidad_noches,
+            'precio_total': int(precio_con_descuento),
             'fecha_creacion': datetime.utcnow()
         })
         
