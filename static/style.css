@@ -739,12 +739,6 @@ main {
     .logo .tagline {
         font-size: 11px;
     }
-
-.menu-toggle {
-    display: none;
-}
-
-@media (max-width: 768px) {
     .menu-toggle {
         display: none;
     }
