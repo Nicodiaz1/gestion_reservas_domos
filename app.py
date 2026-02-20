@@ -463,6 +463,20 @@ def cancelar_reserva(reserva_id):
     
     return jsonify({'mensaje': 'Reserva cancelada'}), 200
 
+@app.route('/api/admin/reserva/<int:reserva_id>/eliminar', methods=['DELETE'])
+@admin_required
+def eliminar_reserva_definitiva(reserva_id):
+    """Elimina definitivamente una reserva"""
+    reserva = Reserva.query.get(reserva_id)
+
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+
+    db.session.delete(reserva)
+    db.session.commit()
+
+    return jsonify({'mensaje': 'Reserva eliminada'}), 200
+
 @app.route('/api/admin/feriados', methods=['GET', 'POST'])
 @admin_required
 def gestionar_feriados():
