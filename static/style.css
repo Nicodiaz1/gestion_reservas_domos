@@ -746,45 +746,12 @@ main {
 
 @media (max-width: 768px) {
     .menu-toggle {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-        order: -1;
-        margin-right: 12px;
-    }
-
-    .menu-toggle span {
-        width: 24px;
-        height: 3px;
-        background: white;
-        border-radius: 2px;
-        transition: all 0.3s ease;
-    }
-
-    .menu-toggle.active span:nth-child(1) {
-        transform: rotate(45deg) translate(9px, 9px);
-    }
-
-    .menu-toggle.active span:nth-child(2) {
-        opacity: 0;
-    }
-
-    .menu-toggle.active span:nth-child(3) {
-        transform: rotate(-45deg) translate(8px, -8px);
+        display: none;
     }
 
     .nav {
-        display: none !important;
-    }
-
-    @media (max-width: 768px) {
-        .nav {
-            display: none !important;
-        }
+        display: flex;
+        gap: 8px;
     }
 
     .mobile-menu {
