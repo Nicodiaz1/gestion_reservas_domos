@@ -804,6 +804,10 @@ main {
         font-size: 16px;
     }
 
+    .hero-actions .btn-primary {
+        width: 100%;
+    }
+
     .section-header h2 {
         font-size: 28px;
     }
