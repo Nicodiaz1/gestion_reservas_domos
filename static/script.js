@@ -211,6 +211,30 @@ function construirCalendario() {
         </div>
         <div class="calendario-days" id="dias"></div>
     `;
+
+    const header = container.querySelector('.calendario-header');
+    if (header) {
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '12px';
+    }
+
+    const weekdays = container.querySelector('.calendario-weekdays');
+    if (weekdays) {
+        weekdays.style.display = 'grid';
+        weekdays.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        weekdays.style.gap = '2px';
+        weekdays.style.marginBottom = '8px';
+        weekdays.style.textAlign = 'center';
+    }
+
+    const daysGrid = container.querySelector('.calendario-days');
+    if (daysGrid) {
+        daysGrid.style.display = 'grid';
+        daysGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        daysGrid.style.gap = '2px';
+    }
     
     // Llenar días
     const primerDia = new Date(mes.getFullYear(), mes.getMonth(), 1);
