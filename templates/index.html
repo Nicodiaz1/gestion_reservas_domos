@@ -23,7 +23,12 @@
                         </div>
                     </div>
                 </div>
-                <nav class="nav">
+                <button class="menu-toggle" id="menuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <nav class="nav" id="navMenu">
                     <a href="#galeria" class="nav-link">Galería</a>
                     <span class="nav-separator">|</span>
                     <a href="#promociones" class="nav-link">Promociones</a>
@@ -37,6 +42,15 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu" id="mobileMenu">
+        <a href="#galeria" class="mobile-nav-link">Galería</a>
+        <a href="#promociones" class="mobile-nav-link">Promociones</a>
+        <a href="#reservas" class="mobile-nav-link">Reservar</a>
+        <a href="#ubicacion" class="mobile-nav-link">Ubicación</a>
+        <a href="/admin/login" class="mobile-nav-link">Admin</a>
+    </nav>
 
     <!-- HERO SECTION -->
     <section class="hero">
@@ -243,5 +257,22 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+            menuToggle.classList.toggle('active');
+        });
+
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                menuToggle.classList.remove('active');
+            });
+        });
+    </script>
 </body>
 </html>
