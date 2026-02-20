@@ -75,19 +75,9 @@ body {
         min-height: 56px;
     }
 
-    .header.scrolled .logo-text {
-        display: none;
-    }
-
     .header.scrolled .logo-container {
         flex-direction: row;
         gap: 8px;
-    }
-
-    .header.scrolled .header-content {
-        justify-content: space-between;
-        align-items: center;
-        flex-direction: row;
     }
 
     .header.scrolled .logo-image {
@@ -95,20 +85,18 @@ body {
         height: 36px;
     }
 
-    .header.scrolled .nav {
+    .header.scrolled .logo-text {
         display: flex;
-        flex-direction: row;
-        gap: 4px;
-        flex-wrap: nowrap;
+        flex-direction: column;
+        gap: 0;
     }
 
-    .header.scrolled .nav-link {
-        padding: 4px 6px;
-        font-size: 10px;
-        white-space: nowrap;
+    .header.scrolled .logo h1 {
+        font-size: 14px;
+        line-height: 1.1;
     }
 
-    .header.scrolled .nav-separator {
+    .header.scrolled .tagline {
         display: none;
     }
 }
@@ -760,6 +748,8 @@ main {
         border: none;
         cursor: pointer;
         padding: 8px;
+        order: -1;
+        margin-right: 12px;
     }
 
     .menu-toggle span {
@@ -783,7 +773,7 @@ main {
     }
 
     .nav {
-        display: none;
+        display: none !important;
     }
 
     .mobile-menu {
