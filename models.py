@@ -93,3 +93,45 @@ class Feriado(db.Model):
             'nombre': self.nombre or self.descripcion,
             'descripcion': self.descripcion
         }
+
+
+class GaleriaFoto(db.Model):
+    """Fotos de la galería administradas desde el panel"""
+    __tablename__ = 'galeria_fotos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(500), nullable=False)
+    titulo = db.Column(db.String(120))
+    orden = db.Column(db.Integer, default=0)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'url': self.url,
+            'titulo': self.titulo,
+            'orden': self.orden
+        }
+
+
+class Promocion(db.Model):
+    """Promociones visibles en la página principal"""
+    __tablename__ = 'promociones'
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(120), nullable=False)
+    descripcion = db.Column(db.String(500), nullable=False)
+    detalle = db.Column(db.String(200))
+    activo = db.Column(db.Boolean, default=True)
+    orden = db.Column(db.Integer, default=0)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'titulo': self.titulo,
+            'descripcion': self.descripcion,
+            'detalle': self.detalle,
+            'activo': self.activo,
+            'orden': self.orden
+        }

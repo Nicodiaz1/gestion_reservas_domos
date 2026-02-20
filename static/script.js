@@ -27,14 +27,29 @@ let lightboxIndex = 0;
 document.addEventListener('DOMContentLoaded', () => {
     cargarDomos();
     setupFormListeners();
-    renderGaleria();
+    cargarGaleria();
+    cargarPromociones();
     setupHeaderScroll();
 });
 
-function renderGaleria() {
+async function cargarGaleria() {
+    try {
+        const res = await fetch('/api/galeria');
+        const data = await res.json();
+        const fotos = Array.isArray(data) && data.length
+            ? data.map((f) => f.url)
+            : galeriaFotos;
+        galeriaFotos = fotos;
+        renderGaleria(fotos);
+    } catch (error) {
+        renderGaleria(galeriaFotos);
+    }
+}
+
+function renderGaleria(fotos) {
     const grid = document.getElementById('galeriaGrid');
     if (!grid) return;
-    const previewFotos = galeriaFotos.slice(0, 4);
+    const previewFotos = fotos.slice(0, 4);
     grid.innerHTML = previewFotos
         .map((url, index) => {
             const verMasClass = index === previewFotos.length - 1 ? ' ver-mas' : '';
@@ -49,6 +64,28 @@ function renderGaleria() {
         `;
         })
         .join('');
+}
+
+async function cargarPromociones() {
+    const grid = document.getElementById('promocionesGrid');
+    if (!grid) return;
+    try {
+        const res = await fetch('/api/promociones');
+        const data = await res.json();
+        if (!Array.isArray(data) || data.length === 0) {
+            grid.innerHTML = '<p class="loading">Consultá por promociones vigentes</p>';
+            return;
+        }
+        grid.innerHTML = data.map((promo) => `
+            <div class="promo-card">
+                <h3>${promo.titulo}</h3>
+                <p>${promo.descripcion}</p>
+                ${promo.detalle ? `<span class="promo-badge">${promo.detalle}</span>` : ''}
+            </div>
+        `).join('');
+    } catch (error) {
+        grid.innerHTML = '<p class="loading">Consultá por promociones vigentes</p>';
+    }
 }
 
 function setupHeaderScroll() {

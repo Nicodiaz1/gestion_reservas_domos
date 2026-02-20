@@ -5,7 +5,7 @@ from functools import wraps
 import os
 import json
 from config import Config
-from models import db, Domo, Reserva, Configuracion, Feriado
+from models import db, Domo, Reserva, Configuracion, Feriado, GaleriaFoto, Promocion
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -182,6 +182,20 @@ def get_domos():
             'imagen': f'/static/img/domo{domo.id}.jpg'
         })
     return jsonify(resultado), 200
+
+
+@app.route('/api/galeria')
+def get_galeria():
+    """Retorna las fotos de la galería"""
+    fotos = GaleriaFoto.query.order_by(GaleriaFoto.orden.asc(), GaleriaFoto.id.asc()).all()
+    return jsonify([f.to_dict() for f in fotos]), 200
+
+
+@app.route('/api/promociones')
+def get_promociones():
+    """Retorna las promociones activas"""
+    promos = Promocion.query.filter_by(activo=True).order_by(Promocion.orden.asc(), Promocion.id.asc()).all()
+    return jsonify([p.to_dict() for p in promos]), 200
 
 @app.route('/api/disponibilidad/<int:domo_id>')
 def get_disponibilidad(domo_id):
@@ -476,6 +490,128 @@ def eliminar_reserva_definitiva(reserva_id):
     db.session.commit()
 
     return jsonify({'mensaje': 'Reserva eliminada'}), 200
+
+
+# ==================== ADMIN GALERIA ====================
+
+@app.route('/api/admin/galeria')
+@admin_required
+def admin_galeria():
+    fotos = GaleriaFoto.query.order_by(GaleriaFoto.orden.asc(), GaleriaFoto.id.asc()).all()
+    return jsonify([f.to_dict() for f in fotos]), 200
+
+
+@app.route('/api/admin/galeria', methods=['POST'])
+@admin_required
+def admin_galeria_crear():
+    data = request.json or {}
+    url_foto = (data.get('url') or '').strip()
+    titulo = (data.get('titulo') or '').strip() or None
+    orden = data.get('orden') or 0
+
+    if not url_foto:
+        return jsonify({'error': 'URL requerida'}), 400
+
+    try:
+        foto = GaleriaFoto(url=url_foto, titulo=titulo, orden=int(orden))
+        db.session.add(foto)
+        db.session.commit()
+        return jsonify(foto.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/galeria/<int:foto_id>', methods=['DELETE'])
+@admin_required
+def admin_galeria_eliminar(foto_id):
+    foto = GaleriaFoto.query.get(foto_id)
+    if not foto:
+        return jsonify({'error': 'Foto no encontrada'}), 404
+
+    try:
+        db.session.delete(foto)
+        db.session.commit()
+        return jsonify({'mensaje': 'Foto eliminada'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ==================== ADMIN PROMOCIONES ====================
+
+@app.route('/api/admin/promociones')
+@admin_required
+def admin_promociones():
+    promos = Promocion.query.order_by(Promocion.orden.asc(), Promocion.id.asc()).all()
+    return jsonify([p.to_dict() for p in promos]), 200
+
+
+@app.route('/api/admin/promociones', methods=['POST'])
+@admin_required
+def admin_promociones_crear():
+    data = request.json or {}
+    titulo = (data.get('titulo') or '').strip()
+    descripcion = (data.get('descripcion') or '').strip()
+    detalle = (data.get('detalle') or '').strip() or None
+    orden = data.get('orden') or 0
+    activo = bool(data.get('activo', True))
+
+    if not titulo or not descripcion:
+        return jsonify({'error': 'Título y descripción requeridos'}), 400
+
+    try:
+        promo = Promocion(
+            titulo=titulo,
+            descripcion=descripcion,
+            detalle=detalle,
+            orden=int(orden),
+            activo=activo
+        )
+        db.session.add(promo)
+        db.session.commit()
+        return jsonify(promo.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/promociones/<int:promo_id>', methods=['PUT'])
+@admin_required
+def admin_promociones_actualizar(promo_id):
+    promo = Promocion.query.get(promo_id)
+    if not promo:
+        return jsonify({'error': 'Promoción no encontrada'}), 404
+
+    data = request.json or {}
+    promo.titulo = (data.get('titulo') or promo.titulo).strip()
+    promo.descripcion = (data.get('descripcion') or promo.descripcion).strip()
+    promo.detalle = (data.get('detalle') or promo.detalle)
+    promo.orden = int(data.get('orden', promo.orden))
+    promo.activo = bool(data.get('activo', promo.activo))
+
+    try:
+        db.session.commit()
+        return jsonify(promo.to_dict()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/promociones/<int:promo_id>', methods=['DELETE'])
+@admin_required
+def admin_promociones_eliminar(promo_id):
+    promo = Promocion.query.get(promo_id)
+    if not promo:
+        return jsonify({'error': 'Promoción no encontrada'}), 404
+
+    try:
+        db.session.delete(promo)
+        db.session.commit()
+        return jsonify({'mensaje': 'Promoción eliminada'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/feriados', methods=['GET', 'POST'])
 @admin_required
