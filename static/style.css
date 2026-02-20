@@ -673,23 +673,49 @@ main {
         text-align: center;
     }
 
-    .nav {
+    .logo-container {
         flex-direction: column;
-        gap: 12px;
+        text-align: center;
+    }
+
+    .logo h1 {
+        font-size: 22px;
+    }
+
+    .logo .tagline {
+        font-size: 12px;
+    }
+
+    .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
         width: 100%;
     }
 
+    .nav-separator {
+        display: none;
+    }
+
     .nav-link {
-        display: block;
-        width: 100%;
+        padding: 8px 12px;
+        font-size: 14px;
     }
 
     .hero-content h2 {
         font-size: 32px;
     }
 
+    .hero-content p {
+        font-size: 16px;
+    }
+
     .section-header h2 {
         font-size: 28px;
+    }
+
+    .section-header p {
+        font-size: 16px;
     }
 
     .domos-grid {
@@ -703,11 +729,41 @@ main {
 
     .modal-content {
         width: 95%;
-        margin: 20% auto;
+        max-height: 90vh;
+        overflow-y: auto;
+        margin: 5% auto;
+    }
+
+    .modal-header h2 {
+        font-size: 20px;
     }
 
     .domo-features {
         grid-template-columns: 1fr;
+    }
+
+    .calendario-grid {
+        gap: 4px;
+    }
+
+    .calendario-day {
+        height: 36px;
+        font-size: 11px;
+    }
+
+    .calendario-leyenda {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        text-align: center;
+    }
+
+    .map-container iframe {
+        height: 300px;
     }
 }
 
@@ -716,24 +772,88 @@ main {
         padding: 0 16px;
     }
 
+    .header {
+        padding: 16px 0;
+        min-height: auto;
+    }
+
     .logo h1 {
-        font-size: 24px;
+        font-size: 18px;
+    }
+
+    .logo-image {
+        width: 48px;
+        height: 48px;
+    }
+
+    .nav-link {
+        padding: 6px 10px;
+        font-size: 12px;
     }
 
     .hero-content h2 {
         font-size: 24px;
     }
 
+    .hero-content p {
+        font-size: 14px;
+    }
+
     .section-header h2 {
         font-size: 24px;
+    }
+
+    .section-header p {
+        font-size: 14px;
     }
 
     .domo-content {
         padding: 16px;
     }
 
+    .domo-header h3 {
+        font-size: 20px;
+    }
+
     .form {
         padding: 16px;
+    }
+
+    .btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .modal-content {
+        width: 98%;
+        margin: 2% auto;
+        padding: 16px;
+    }
+
+    .close-btn {
+        font-size: 28px;
+    }
+
+    .calendario-day {
+        height: 32px;
+        font-size: 10px;
+    }
+
+    .precio-box {
+        font-size: 13px;
+    }
+
+    .map-container iframe {
+        height: 250px;
+    }
+
+    .footer-section h4 {
+        font-size: 14px;
+    }
+
+    .footer-section p,
+    .footer-link {
+        font-size: 13px;
     }
 }
 
