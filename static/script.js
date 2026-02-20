@@ -73,7 +73,7 @@ async function cargarPromociones() {
         const res = await fetch('/api/promociones');
         const data = await res.json();
         if (!Array.isArray(data) || data.length === 0) {
-            grid.innerHTML = '<p class="loading">Consultá por promociones vigentes</p>';
+            grid.innerHTML = '<p class="loading">Consultá por futuras promociones</p>';
             return;
         }
         grid.innerHTML = data.map((promo) => `
@@ -85,7 +85,7 @@ async function cargarPromociones() {
             </div>
         `).join('');
     } catch (error) {
-        grid.innerHTML = '<p class="loading">Consultá por promociones vigentes</p>';
+        grid.innerHTML = '<p class="loading">Consultá por futuras promociones</p>';
     }
 }
 
