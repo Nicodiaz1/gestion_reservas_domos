@@ -91,6 +91,7 @@ def init_db():
             crear_domos_defecto()
             crear_feriados_argentina()
             asegurar_columnas()
+            asegurar_galeria_defecto()
             print("✓ Base de datos inicializada")
         except Exception as e:
             print(f"✗ Error: {e}")
@@ -147,6 +148,37 @@ def crear_feriados_argentina():
     except Exception as e:
         print(f"✗ Error creando feriados: {e}")
         db.session.rollback()
+
+def asegurar_galeria_defecto():
+    """Agrega fotos por defecto si no existen"""
+    try:
+        urls_defecto = [
+            'https://i.imgur.com/1rwus0F.jpg',
+            'https://i.imgur.com/SdZazOK.jpg',
+            'https://i.imgur.com/pfmT1Yo.jpg',
+            'https://i.imgur.com/iO1sjPm.jpg',
+            'https://i.imgur.com/eKUpwpH.jpg',
+            'https://i.imgur.com/YwRBI5N.jpg',
+            'https://i.imgur.com/4tDPyEV.jpg',
+            'https://i.imgur.com/eXTTLZy.jpg',
+            'https://i.imgur.com/Xk4wM4R.jpg',
+            'https://i.imgur.com/lUI8A1z.jpg',
+            'https://i.imgur.com/XEA5rpM.jpg',
+            'https://i.imgur.com/B1ydkwh.jpg'
+        ]
+
+        existentes = {f.url for f in GaleriaFoto.query.all()}
+        agregadas = 0
+        for idx, url in enumerate(urls_defecto):
+            if url in existentes:
+                continue
+            db.session.add(GaleriaFoto(url=url, orden=idx))
+            agregadas += 1
+        if agregadas:
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"✗ Error agregando galería por defecto: {e}")
 
 # Inicializar al crear la app
 init_db()
