@@ -23,6 +23,9 @@
 
 html {
     scroll-behavior: smooth;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 body {
@@ -33,6 +36,7 @@ body {
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    height: 100%;
 }
 
 /* ==================== CONTENEDOR ==================== */
@@ -195,6 +199,8 @@ body {
     overflow: hidden;
     padding: 0;
     margin: 0;
+    top: 0;
+    left: 0;
 }
 
 .hero::after {
