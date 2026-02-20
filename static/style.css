@@ -69,6 +69,10 @@ body {
     box-shadow: var(--shadow);
 }
 
+.header.scrolled .logo-image {
+    background: rgba(255, 255, 255, 0.8);
+}
+
 @media (max-width: 768px) {
     .header.scrolled {
         padding: 8px 0;
