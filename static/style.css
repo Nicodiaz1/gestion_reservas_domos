@@ -740,6 +740,11 @@ main {
         font-size: 11px;
     }
 
+.menu-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
     .menu-toggle {
         display: flex;
         flex-direction: column;
@@ -774,6 +779,12 @@ main {
 
     .nav {
         display: none !important;
+    }
+
+    @media (max-width: 768px) {
+        .nav {
+            display: none !important;
+        }
     }
 
     .mobile-menu {
