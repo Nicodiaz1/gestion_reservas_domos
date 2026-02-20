@@ -14,17 +14,12 @@
     <header class="header">
         <div class="container">
             <div class="header-content">
-                <button class="menu-toggle" id="menuToggle">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
                 <div class="logo">
                     <div class="logo-container">
                         <img src="https://i.imgur.com/gNsNdoe.png" alt="Logo Sombras del Aguaribay" class="logo-image">
                         <div class="logo-text">
                             <h1>SOMBRAS DEL AGUARIBAY</h1>
-                            <p class="tagline">Vive una experiencia única en la naturaleza</p>
+                            <p class="tagline">Domos de montaña</p>
                         </div>
                     </div>
                 </div>
@@ -33,7 +28,7 @@
                     <span class="nav-separator">|</span>
                     <a href="#promociones" class="nav-link">Promociones</a>
                     <span class="nav-separator">|</span>
-                    <a href="#reservas" class="nav-link">Reservar</a>
+                    <a href="#reservas" class="nav-link">Ver disponibilidad</a>
                     <span class="nav-separator">|</span>
                     <a href="#ubicacion" class="nav-link">Ubicación</a>
                     <span class="nav-separator">|</span>
@@ -50,7 +45,7 @@
         </video>
         <div class="hero-content">
             <h2>Glamping de lujo en Villa Serranita, Córdoba</h2>
-            <p>Disfruta de confort premium rodeado de naturaleza virgen</p>
+            <p>Vive una experiencia única en la naturaleza</p>
             <div class="hero-actions">
                 <a href="#reservas" class="btn btn-primary">Reservas</a>
             </div>
@@ -90,7 +85,7 @@
     <section id="ubicacion" class="map-section">
         <div class="section-header">
             <h2>Ubicación</h2>
-            <p>Encuéntranos en Las Salinas</p>
+            <p>Encuéntranos en la Serranita, Córdoba</p>
         </div>
         <div class="map-container">
             <iframe
@@ -248,22 +243,5 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script>
-        const menuToggle = document.getElementById('menuToggle');
-        const mobileMenu = document.getElementById('mobileMenu');
-        const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
-
-        menuToggle.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-            menuToggle.classList.toggle('active');
-        });
-
-        mobileNavLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                menuToggle.classList.remove('active');
-            });
-        });
-    </script>
 </body>
 </html>
