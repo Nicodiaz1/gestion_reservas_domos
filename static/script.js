@@ -7,12 +7,62 @@ let fechasInicioReserva = [];   // Fechas de inicio de reservas (disponibles com
 let calendarioMes = new Date();
 let fechaInicioTemp = null;
 let fechaFinTemp = null;
+let galeriaFotos = [
+    'https://i.imgur.com/1rwus0F.jpg',
+    'https://i.imgur.com/SdZazOK.jpg',
+    'https://i.imgur.com/pfmT1Yo.jpg',
+    'https://i.imgur.com/iO1sjPm.jpg',
+    'https://i.imgur.com/eKUpwpH.jpg',
+    'https://i.imgur.com/YwRBI5N.jpg',
+    'https://i.imgur.com/4tDPyEV.jpg',
+    'https://i.imgur.com/eXTTLZy.jpg',
+    'https://i.imgur.com/Xk4wM4R.jpg',
+    'https://i.imgur.com/lUI8A1z.jpg',
+    'https://i.imgur.com/XEA5rpM.jpg',
+    'https://i.imgur.com/B1ydkwh.jpg'
+];
+let lightboxIndex = 0;
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
     cargarDomos();
     setupFormListeners();
+    renderGaleria();
 });
+
+function renderGaleria() {
+    const grid = document.getElementById('galeriaGrid');
+    if (!grid) return;
+    grid.innerHTML = galeriaFotos
+        .map((url, index) => `
+            <div class="galeria-item">
+                <img src="${url}" alt="Foto ${index + 1}" onclick="abrirLightbox(${index})">
+            </div>
+        `)
+        .join('');
+}
+
+function abrirLightbox(index) {
+    lightboxIndex = index;
+    const lightbox = document.getElementById('galeriaLightbox');
+    const imagen = document.getElementById('lightboxImagen');
+    if (!lightbox || !imagen) return;
+    imagen.src = galeriaFotos[lightboxIndex];
+    lightbox.classList.add('active');
+}
+
+function cerrarLightbox() {
+    const lightbox = document.getElementById('galeriaLightbox');
+    if (!lightbox) return;
+    lightbox.classList.remove('active');
+}
+
+function navegarLightbox(direccion) {
+    if (!galeriaFotos.length) return;
+    lightboxIndex = (lightboxIndex + direccion + galeriaFotos.length) % galeriaFotos.length;
+    const imagen = document.getElementById('lightboxImagen');
+    if (imagen) imagen.src = galeriaFotos[lightboxIndex];
+}
 
 // ==================== CARGAR DOMOS ====================
 async function cargarDomos() {
@@ -61,14 +111,14 @@ function crearTarjetaDomo(domo) {
             <p class="domo-description">${domo.descripcion}</p>
             
             <div class="domo-features">
-                <div class="feature">Wifi - SI</div>
-                <div class="feature">Admite Mascotas - SI</div>
-                <div class="feature">Ropa Blanca - SI</div>
-                <div class="feature">Baño Privado - SI</div>
-                <div class="feature">Aire Acondicionado - SI</div>
-                <div class="feature">Calefacción - SI</div>
-                <div class="feature">Cocina - SI</div>
-                <div class="feature">Estacionamiento - SI</div>
+                <div class="feature">Wifi</div>
+                <div class="feature">Admite Mascotas</div>
+                <div class="feature">Ropa Blanca</div>
+                <div class="feature">Baño Privado</div>
+                <div class="feature">Aire Acondicionado</div>
+                <div class="feature">Calefacción</div>
+                <div class="feature">Cocina</div>
+                <div class="feature">Estacionamiento</div>
             </div>
             
             <div class="price-section" style="display: none;">

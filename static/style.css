@@ -119,7 +119,7 @@ body {
 .hero {
     position: relative;
     color: white;
-    min-height: 70vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -212,6 +212,61 @@ main {
     height: 240px;
     object-fit: cover;
     display: block;
+}
+
+/* ==================== LIGHTBOX ==================== */
+.lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.lightbox.active {
+    display: flex;
+}
+
+.lightbox img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 10px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    font-size: 36px;
+    color: white;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 48px;
+    color: white;
+    background: rgba(0, 0, 0, 0.3);
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    cursor: pointer;
+}
+
+.lightbox-nav.prev {
+    left: 24px;
+}
+
+.lightbox-nav.next {
+    right: 24px;
 }
 
 /* ==================== DOMOS GRID ==================== */

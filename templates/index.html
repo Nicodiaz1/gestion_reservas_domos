@@ -32,7 +32,7 @@
     <!-- HERO SECTION -->
     <section class="hero">
         <video class="hero-video" autoplay muted loop playsinline>
-            <source src="https://i.imgur.com/D1qaKur.mp4" type="video/mp4">
+            <source src="https://i.imgur.com/A3W1Ff5.mp4" type="video/mp4">
         </video>
         <div class="hero-content">
             <h2>Glamping de lujo en Villa Serranita, Córdoba</h2>
@@ -50,17 +50,7 @@
                 <h2>Fotos</h2>
                 <p>Un vistazo a la experiencia en nuestros domos</p>
             </div>
-            <div class="galeria-grid">
-                <div class="galeria-item">
-                    <img src="https://i.imgur.com/cfLIaDz.jpg" alt="Domo Aguaribay">
-                </div>
-                <div class="galeria-item">
-                    <img src="https://i.imgur.com/ZeWzC9v.jpg" alt="Domo Espinillo">
-                </div>
-                <div class="galeria-item">
-                    <img src="https://i.imgur.com/lUI8A1z.jpg" alt="Domo Eucalipto">
-                </div>
-            </div>
+            <div id="galeriaGrid" class="galeria-grid"></div>
         </section>
 
         <section id="reservas" class="reservas-section">
@@ -209,6 +199,14 @@
             <p id="errorMessage" style="margin-bottom: 32px; font-size: 15px; color: #666;"></p>
             <button onclick="cerrarModal('errorModal')" class="btn btn-primary">Cerrar</button>
         </div>
+    </div>
+
+    <!-- Lightbox Galería -->
+    <div id="galeriaLightbox" class="lightbox">
+        <button class="lightbox-close" onclick="cerrarLightbox()">&times;</button>
+        <button class="lightbox-nav prev" onclick="navegarLightbox(-1)">‹</button>
+        <img id="lightboxImagen" src="" alt="Foto">
+        <button class="lightbox-nav next" onclick="navegarLightbox(1)">›</button>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
