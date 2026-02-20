@@ -78,6 +78,7 @@ async function cargarPromociones() {
         }
         grid.innerHTML = data.map((promo) => `
             <div class="promo-card">
+                ${promo.image_url ? `<img class="promo-image" src="${promo.image_url}" alt="${promo.titulo}">` : ''}
                 <h3>${promo.titulo}</h3>
                 <p>${promo.descripcion}</p>
                 ${promo.detalle ? `<span class="promo-badge">${promo.detalle}</span>` : ''}

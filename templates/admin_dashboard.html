@@ -77,6 +77,10 @@
                             <input type="text" id="galeria-url" placeholder="https://...">
                         </div>
                         <div class="form-group">
+                            <label for="galeria-file">Subir imagen</label>
+                            <input type="file" id="galeria-file" accept="image/*">
+                        </div>
+                        <div class="form-group">
                             <label for="galeria-titulo">Título (opcional)</label>
                             <input type="text" id="galeria-titulo" placeholder="Descripción corta">
                         </div>
@@ -101,6 +105,14 @@
                         <div class="form-group">
                             <label for="promo-titulo">Título</label>
                             <input type="text" id="promo-titulo" placeholder="Ej: 2x1 en semana">
+                        </div>
+                        <div class="form-group">
+                            <label for="promo-imagen-url">URL de imagen (opcional)</label>
+                            <input type="text" id="promo-imagen-url" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="promo-imagen">Subir imagen</label>
+                            <input type="file" id="promo-imagen" accept="image/*">
                         </div>
                         <div class="form-group">
                             <label for="promo-detalle">Detalle (opcional)</label>
@@ -278,6 +290,18 @@
             renderReservas();
         });
 
+        async function subirArchivo(endpoint, file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch(endpoint, { method: 'POST', body: formData });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error subiendo archivo');
+            }
+            const data = await res.json();
+            return data.url;
+        }
+
         // ========== GALERIA ==========
         async function cargarGaleriaAdmin() {
             try {
@@ -310,10 +334,22 @@
         }
 
         document.getElementById('galeria-guardar').addEventListener('click', async () => {
-            const url = document.getElementById('galeria-url').value.trim();
+            const urlInput = document.getElementById('galeria-url').value.trim();
+            const fileInput = document.getElementById('galeria-file');
             const titulo = document.getElementById('galeria-titulo').value.trim();
             const orden = document.getElementById('galeria-orden').value || 0;
-            if (!url) return alert('URL requerida');
+
+            let url = urlInput;
+            if (!url && fileInput.files.length) {
+                try {
+                    url = await subirArchivo('/api/admin/galeria/upload', fileInput.files[0]);
+                } catch (error) {
+                    return alert(error.message);
+                }
+            }
+
+            if (!url) return alert('URL o archivo requerido');
+
             const res = await fetch('/api/admin/galeria', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -323,6 +359,7 @@
                 document.getElementById('galeria-url').value = '';
                 document.getElementById('galeria-titulo').value = '';
                 document.getElementById('galeria-orden').value = 0;
+                fileInput.value = '';
                 cargarGaleriaAdmin();
             }
         });
@@ -339,6 +376,7 @@
                             <span class="status ${p.activo ? 'confirmada' : 'cancelada'}">${p.activo ? 'activa' : 'inactiva'}</span>
                         </div>
                         <div class="reserva-body">
+                            ${p.image_url ? `<img src="${p.image_url}" alt="${p.titulo}" style="width: 100%; border-radius: 12px; margin-bottom: 10px;">` : ''}
                             <p>${p.descripcion}</p>
                             ${p.detalle ? `<p><strong>Detalle:</strong> ${p.detalle}</p>` : ''}
                             <p><strong>Orden:</strong> ${p.orden}</p>
@@ -365,17 +403,32 @@
             const descripcion = document.getElementById('promo-descripcion').value.trim();
             const detalle = document.getElementById('promo-detalle').value.trim();
             const orden = document.getElementById('promo-orden').value || 0;
+            const imagenUrlInput = document.getElementById('promo-imagen-url').value.trim();
+            const imagenFileInput = document.getElementById('promo-imagen');
+
             if (!titulo || !descripcion) return alert('Título y descripción requeridos');
+
+            let image_url = imagenUrlInput;
+            if (!image_url && imagenFileInput.files.length) {
+                try {
+                    image_url = await subirArchivo('/api/admin/promociones/upload', imagenFileInput.files[0]);
+                } catch (error) {
+                    return alert(error.message);
+                }
+            }
+
             const res = await fetch('/api/admin/promociones', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ titulo, descripcion, detalle, orden })
+                body: JSON.stringify({ titulo, descripcion, detalle, orden, image_url })
             });
             if (res.ok) {
                 document.getElementById('promo-titulo').value = '';
                 document.getElementById('promo-descripcion').value = '';
                 document.getElementById('promo-detalle').value = '';
                 document.getElementById('promo-orden').value = 0;
+                document.getElementById('promo-imagen-url').value = '';
+                imagenFileInput.value = '';
                 cargarPromosAdmin();
             }
         });

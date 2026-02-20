@@ -123,6 +123,7 @@ class Promocion(db.Model):
     descripcion = db.Column(db.String(500), nullable=False)
     detalle = db.Column(db.String(200))
     activo = db.Column(db.Boolean, default=True)
+    image_url = db.Column(db.String(500))
     orden = db.Column(db.Integer, default=0)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -133,5 +134,6 @@ class Promocion(db.Model):
             'descripcion': self.descripcion,
             'detalle': self.detalle,
             'activo': self.activo,
+            'image_url': self.image_url,
             'orden': self.orden
         }

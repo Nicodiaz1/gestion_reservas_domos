@@ -4,13 +4,35 @@ from datetime import datetime, timedelta
 from functools import wraps
 import os
 import json
+import uuid
+from sqlalchemy import inspect, text
+from werkzeug.utils import secure_filename
 from config import Config
 from models import db, Domo, Reserva, Configuracion, Feriado, GaleriaFoto, Promocion
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 db.init_app(app)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def save_uploaded_file(file_storage):
+    if not file_storage or file_storage.filename == '':
+        return None
+    if not allowed_file(file_storage.filename):
+        return None
+    filename = secure_filename(file_storage.filename)
+    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+    file_storage.save(file_path)
+    return f"/static/uploads/{unique_name}"
 
 def admin_required(f):
     """Decorador para rutas que requieren autenticación de admin"""
@@ -68,9 +90,23 @@ def init_db():
             db.create_all()
             crear_domos_defecto()
             crear_feriados_argentina()
+            asegurar_columnas()
             print("✓ Base de datos inicializada")
         except Exception as e:
             print(f"✗ Error: {e}")
+
+def asegurar_columnas():
+    """Asegura columnas nuevas sin migraciones formales"""
+    try:
+        inspector = inspect(db.engine)
+        if inspector.has_table('promociones'):
+            columnas = [col['name'] for col in inspector.get_columns('promociones')]
+            if 'image_url' not in columnas:
+                db.session.execute(text('ALTER TABLE promociones ADD COLUMN image_url VARCHAR(500)'))
+                db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"✗ Error agregando columnas: {e}")
 
 def crear_feriados_argentina():
     """Crea los feriados de Argentina 2026"""
@@ -522,6 +558,18 @@ def admin_galeria_crear():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/admin/galeria/upload', methods=['POST'])
+@admin_required
+def admin_galeria_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Archivo requerido'}), 400
+    archivo = request.files['file']
+    url_foto = save_uploaded_file(archivo)
+    if not url_foto:
+        return jsonify({'error': 'Archivo inválido'}), 400
+    return jsonify({'url': url_foto}), 201
+
+
 @app.route('/api/admin/galeria/<int:foto_id>', methods=['DELETE'])
 @admin_required
 def admin_galeria_eliminar(foto_id):
@@ -554,6 +602,7 @@ def admin_promociones_crear():
     titulo = (data.get('titulo') or '').strip()
     descripcion = (data.get('descripcion') or '').strip()
     detalle = (data.get('detalle') or '').strip() or None
+    image_url = (data.get('image_url') or '').strip() or None
     orden = data.get('orden') or 0
     activo = bool(data.get('activo', True))
 
@@ -565,6 +614,7 @@ def admin_promociones_crear():
             titulo=titulo,
             descripcion=descripcion,
             detalle=detalle,
+            image_url=image_url,
             orden=int(orden),
             activo=activo
         )
@@ -574,6 +624,18 @@ def admin_promociones_crear():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/promociones/upload', methods=['POST'])
+@admin_required
+def admin_promociones_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'Archivo requerido'}), 400
+    archivo = request.files['file']
+    url_foto = save_uploaded_file(archivo)
+    if not url_foto:
+        return jsonify({'error': 'Archivo inválido'}), 400
+    return jsonify({'url': url_foto}), 201
 
 
 @app.route('/api/admin/promociones/<int:promo_id>', methods=['PUT'])
@@ -587,6 +649,7 @@ def admin_promociones_actualizar(promo_id):
     promo.titulo = (data.get('titulo') or promo.titulo).strip()
     promo.descripcion = (data.get('descripcion') or promo.descripcion).strip()
     promo.detalle = (data.get('detalle') or promo.detalle)
+    promo.image_url = (data.get('image_url') or promo.image_url)
     promo.orden = int(data.get('orden', promo.orden))
     promo.activo = bool(data.get('activo', promo.activo))
 
