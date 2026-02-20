@@ -188,9 +188,11 @@ async function abrirReserva(domoId) {
     fechaInicioTemp = null;
     fechaFinTemp = null;
     
-    construirCalendario();
-    
-    document.getElementById('reservaModal').style.display = 'block';
+    const modal = document.getElementById('reservaModal');
+    modal.style.display = 'block';
+    requestAnimationFrame(() => {
+        construirCalendario();
+    });
 }
 
 // ==================== CONSTRUIR CALENDARIO ====================
