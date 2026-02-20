@@ -27,7 +27,7 @@ html {
 
 body {
     font-family: 'Playfair Display', serif;
-    background: linear-gradient(135deg, #f5f7f6 0%, #e8f0ed 100%);
+    background: #f5f7f6;
     color: var(--dark);
     line-height: 1.6;
     margin: 0;
@@ -187,15 +187,14 @@ body {
     color: white;
     min-height: 100vh;
     height: 100vh;
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     overflow: hidden;
     padding: 0;
+    margin: 0;
 }
 
 .hero::after {
@@ -239,6 +238,8 @@ body {
 /* ==================== MAIN CONTENT ==================== */
 main {
     padding: 60px 0;
+    position: relative;
+    background: linear-gradient(135deg, #f5f7f6 0%, #e8f0ed 100%);
 }
 
 /* ==================== SECTION HEADER ==================== */
