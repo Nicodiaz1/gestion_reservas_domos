@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Domos Glamping - Reservas Online</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -21,7 +24,8 @@
                     </div>
                 </div>
                 <nav class="nav">
-                    <a href="#fotos" class="nav-link">Fotos</a>
+                    <a href="#galeria" class="nav-link">Galería</a>
+                    <a href="#promociones" class="nav-link">Promociones</a>
                     <a href="#reservas" class="nav-link">Reservar</a>
                     <a href="/admin/login" class="nav-link admin">Admin</a>
                 </nav>
@@ -45,12 +49,19 @@
 
     <!-- MAIN CONTENT -->
     <main class="container">
-        <section id="fotos" class="galeria-section">
+        <section id="galeria" class="galeria-section">
             <div class="section-header">
-                <h2>Fotos</h2>
+                <h2>Galería</h2>
                 <p>Un vistazo a la experiencia en nuestros domos</p>
             </div>
             <div id="galeriaGrid" class="galeria-grid"></div>
+        </section>
+
+        <section id="promociones" class="promociones-section">
+            <div class="section-header">
+                <h2>Promociones</h2>
+                <p>Consultá por descuentos especiales según fechas y estadías</p>
+            </div>
         </section>
 
         <section id="reservas" class="reservas-section">
