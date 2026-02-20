@@ -126,6 +126,9 @@ body {
     height: 80px;
     object-fit: contain;
     border-radius: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px;
+    backdrop-filter: blur(2px);
 }
 
 .logo-text {
@@ -729,16 +732,17 @@ main {
     }
 
     .logo-container {
-        flex-direction: column;
-        text-align: center;
+        flex-direction: row;
+        text-align: left;
+        justify-content: center;
     }
 
     .logo h1 {
-        font-size: 22px;
+        font-size: 20px;
     }
 
     .logo .tagline {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .nav {
