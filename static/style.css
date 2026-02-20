@@ -26,7 +26,7 @@ html {
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Playfair Display', serif;
     background: linear-gradient(135deg, #f5f7f6 0%, #e8f0ed 100%);
     color: var(--dark);
     line-height: 1.6;
@@ -41,17 +41,23 @@ body {
 
 /* ==================== HEADER ==================== */
 .header {
+    background: transparent;
+    color: white;
+    padding: 24px 0;
+    position: fixed;
+    top: 0;
+    z-index: 100;
+    min-height: 80px;
+    width: 100%;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.header.scrolled {
     background: 
         url('https://i.imgur.com/dtQBpaP.jpg') center / cover no-repeat,
         linear-gradient(135deg, rgba(45, 80, 22, 0.7) 0%, rgba(45, 80, 22, 0.7) 100%);
     background-blend-mode: overlay;
-    color: white;
-    padding: 24px 0;
     box-shadow: var(--shadow);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    min-height: 80px;
 }
 
 .header-content {
@@ -125,6 +131,7 @@ body {
     justify-content: center;
     text-align: center;
     overflow: hidden;
+    padding-top: 80px;
 }
 
 .hero::after {

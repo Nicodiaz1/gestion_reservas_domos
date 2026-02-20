@@ -28,18 +28,34 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarDomos();
     setupFormListeners();
     renderGaleria();
+    setupHeaderScroll();
 });
 
 function renderGaleria() {
     const grid = document.getElementById('galeriaGrid');
     if (!grid) return;
-    grid.innerHTML = galeriaFotos
+    const previewFotos = galeriaFotos.slice(0, 4);
+    grid.innerHTML = previewFotos
         .map((url, index) => `
             <div class="galeria-item">
                 <img src="${url}" alt="Foto ${index + 1}" onclick="abrirLightbox(${index})">
             </div>
         `)
         .join('');
+}
+
+function setupHeaderScroll() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    const onScroll = () => {
+        if (window.scrollY > 40) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
 }
 
 function abrirLightbox(index) {
