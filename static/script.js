@@ -36,11 +36,18 @@ function renderGaleria() {
     if (!grid) return;
     const previewFotos = galeriaFotos.slice(0, 4);
     grid.innerHTML = previewFotos
-        .map((url, index) => `
-            <div class="galeria-item">
+        .map((url, index) => {
+            const verMasClass = index === previewFotos.length - 1 ? ' ver-mas' : '';
+            const verMasOverlay = index === previewFotos.length - 1
+                ? '<span class="ver-mas-overlay">Ver más</span>'
+                : '';
+            return `
+            <div class="galeria-item${verMasClass}">
                 <img src="${url}" alt="Foto ${index + 1}" onclick="abrirLightbox(${index})">
+                ${verMasOverlay}
             </div>
-        `)
+        `;
+        })
         .join('');
 }
 

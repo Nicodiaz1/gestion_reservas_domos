@@ -296,6 +296,7 @@ main {
     overflow: hidden;
     box-shadow: var(--shadow);
     background: #fff;
+    position: relative;
 }
 
 .galeria-item img {
@@ -303,6 +304,30 @@ main {
     height: 240px;
     object-fit: cover;
     display: block;
+}
+
+.galeria-item.ver-mas::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 100%);
+    pointer-events: none;
+}
+
+.ver-mas-overlay {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 8px 14px;
+    border-radius: 999px;
+    pointer-events: none;
 }
 
 /* ==================== LIGHTBOX ==================== */
