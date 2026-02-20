@@ -213,51 +213,27 @@ function construirCalendario() {
     `;
 
     const header = container.querySelector('.calendario-header');
+    if (header) {
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '12px';
+    }
+
     const weekdays = container.querySelector('.calendario-weekdays');
+    if (weekdays) {
+        weekdays.style.display = 'grid';
+        weekdays.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        weekdays.style.gap = '2px';
+        weekdays.style.marginBottom = '8px';
+        weekdays.style.textAlign = 'center';
+    }
+
     const daysGrid = container.querySelector('.calendario-days');
-    const needsInlineCalendarStyles = weekdays && getComputedStyle(weekdays).display !== 'grid';
-
-    if (needsInlineCalendarStyles) {
-        container.style.background = 'white';
-        container.style.border = '2px solid var(--primary)';
-        container.style.borderRadius = '12px';
-        container.style.padding = '12px';
-        container.style.marginTop = '8px';
-
-        if (header) {
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.alignItems = 'center';
-            header.style.marginBottom = '12px';
-        }
-
-        const headerButtons = container.querySelectorAll('.calendario-header button');
-        headerButtons.forEach((button) => {
-            button.style.background = 'var(--primary)';
-            button.style.color = 'white';
-            button.style.border = 'none';
-            button.style.padding = '4px 8px';
-            button.style.borderRadius = '4px';
-            button.style.cursor = 'pointer';
-            button.style.fontSize = '16px';
-        });
-
-        if (weekdays) {
-            weekdays.style.display = 'grid';
-            weekdays.style.gridTemplateColumns = 'repeat(7, 1fr)';
-            weekdays.style.gap = '2px';
-            weekdays.style.marginBottom = '8px';
-            weekdays.style.textAlign = 'center';
-            weekdays.style.fontWeight = 'bold';
-            weekdays.style.fontSize = '12px';
-            weekdays.style.color = 'var(--primary)';
-        }
-
-        if (daysGrid) {
-            daysGrid.style.display = 'grid';
-            daysGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-            daysGrid.style.gap = '2px';
-        }
+    if (daysGrid) {
+        daysGrid.style.display = 'grid';
+        daysGrid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+        daysGrid.style.gap = '2px';
     }
     
     // Llenar días
@@ -275,17 +251,6 @@ function construirCalendario() {
         btn.textContent = fecha.getDate();
         btn.type = 'button';
         btn.disabled = true;
-        if (needsInlineCalendarStyles) {
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.borderRadius = '4px';
-            btn.style.fontSize = '12px';
-            btn.style.background = '#f9f9f9';
-            btn.style.border = '1px solid #ddd';
-            btn.style.color = '#ccc';
-            btn.style.cursor = 'default';
-        }
         diasContainer.appendChild(btn);
     }
     
@@ -333,47 +298,6 @@ function construirCalendario() {
             btn.disabled = false;
             btn.onclick = () => seleccionarFechaRango(fechaStr);
         }
-
-        if (needsInlineCalendarStyles) {
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.borderRadius = '4px';
-            btn.style.fontSize = '12px';
-            btn.style.background = 'white';
-            btn.style.border = '1px solid #ddd';
-            btn.style.cursor = btn.disabled ? 'not-allowed' : 'pointer';
-            if (btn.classList.contains('rango')) {
-                btn.style.background = '#4caf50';
-                btn.style.color = 'white';
-                btn.style.fontWeight = 'bold';
-            }
-            if (btn.classList.contains('rango-inicio') || btn.classList.contains('rango-fin')) {
-                btn.style.background = '#2e7d32';
-                btn.style.color = 'white';
-                btn.style.fontWeight = 'bold';
-            }
-            if (btn.classList.contains('reserved')) {
-                btn.style.background = '#f44336';
-                btn.style.color = 'white';
-                btn.style.fontWeight = 'bold';
-            }
-            if (btn.classList.contains('checkout')) {
-                btn.style.background = 'linear-gradient(135deg, #f44336 50%, #4caf50 50%)';
-                btn.style.color = 'white';
-                btn.style.fontWeight = 'bold';
-            }
-            if (btn.classList.contains('checkin')) {
-                btn.style.background = 'linear-gradient(135deg, #4caf50 50%, #f44336 50%)';
-                btn.style.color = 'white';
-                btn.style.fontWeight = 'bold';
-            }
-            if (btn.classList.contains('pasada')) {
-                btn.style.background = '#c0c0c0';
-                btn.style.color = '#888';
-                btn.style.opacity = '0.6';
-            }
-        }
         
         // Marcar si está en el rango seleccionado
         if (fechaInicioTemp && fechaFinTemp) {
@@ -400,17 +324,6 @@ function construirCalendario() {
             btn.textContent = i;
             btn.type = 'button';
             btn.disabled = true;
-            if (needsInlineCalendarStyles) {
-                btn.style.display = 'flex';
-                btn.style.alignItems = 'center';
-                btn.style.justifyContent = 'center';
-                btn.style.borderRadius = '4px';
-                btn.style.fontSize = '12px';
-                btn.style.background = '#f9f9f9';
-                btn.style.border = '1px solid #ddd';
-                btn.style.color = '#ccc';
-                btn.style.cursor = 'default';
-            }
             diasContainer.appendChild(btn);
         }
     }
