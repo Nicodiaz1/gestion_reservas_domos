@@ -103,6 +103,12 @@ body {
     align-items: center;
 }
 
+.nav-separator {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 300;
+    user-select: none;
+}
+
 .nav-link {
     color: white;
     text-decoration: none;
@@ -202,16 +208,16 @@ main {
 
 /* ==================== MAPA ==================== */
 .map-section {
-    padding: 20px 0 80px;
+    padding: 20px 0 0;
 }
 
 .map-container {
     width: 100%;
-    border-radius: 16px;
+    border-radius: 0;
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
+    box-shadow: none;
     background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    border: 0;
 }
 
 .map-container iframe {
@@ -609,7 +615,7 @@ main {
     background: var(--dark);
     color: white;
     padding: 60px 0 20px;
-    margin-top: 80px;
+    margin-top: 0;
 }
 
 .footer-content {
