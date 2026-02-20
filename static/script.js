@@ -190,9 +190,13 @@ async function abrirReserva(domoId) {
     
     const modal = document.getElementById('reservaModal');
     modal.style.display = 'block';
+    construirCalendario();
     requestAnimationFrame(() => {
         construirCalendario();
     });
+    setTimeout(() => {
+        construirCalendario();
+    }, 100);
 }
 
 // ==================== CONSTRUIR CALENDARIO ====================

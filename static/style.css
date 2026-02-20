@@ -1705,6 +1705,11 @@ input[type="date"]:invalid {
     gap: 2px;
 }
 
+.calendario-weekdays,
+.calendario-days {
+    display: grid !important;
+}
+
 .calendario-day {
     aspect-ratio: 1;
     display: flex;
