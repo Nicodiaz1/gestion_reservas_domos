@@ -30,6 +30,9 @@ body {
     background: linear-gradient(135deg, #f5f7f6 0%, #e8f0ed 100%);
     color: var(--dark);
     line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
 /* ==================== CONTENEDOR ==================== */
@@ -64,26 +67,45 @@ body {
 
 @media (max-width: 768px) {
     .header.scrolled {
-        padding: 10px 0;
+        padding: 8px 0;
         min-height: 56px;
     }
 
-    .header.scrolled .logo-text,
-    .header.scrolled .nav {
+    .header.scrolled .logo-text {
         display: none;
     }
 
     .header.scrolled .logo-container {
-        justify-content: center;
+        flex-direction: row;
+        gap: 8px;
     }
 
     .header.scrolled .header-content {
-        justify-content: center;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
     }
 
     .header.scrolled .logo-image {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .header.scrolled .nav {
+        display: flex;
+        flex-direction: row;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
+
+    .header.scrolled .nav-link {
+        padding: 4px 6px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .header.scrolled .nav-separator {
+        display: none;
     }
 }
 
@@ -160,14 +182,15 @@ body {
     color: white;
     min-height: 100vh;
     height: 100vh;
-    width: 100%;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     overflow: hidden;
     padding: 0;
-    margin: 0;
 }
 
 .hero::after {
