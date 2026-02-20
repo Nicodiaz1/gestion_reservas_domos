@@ -61,10 +61,14 @@ function crearTarjetaDomo(domo) {
             <p class="domo-description">${domo.descripcion}</p>
             
             <div class="domo-features">
-                <div class="feature">Hasta ${domo.capacidad} huéspedes</div>
-                <div class="feature">Baño privado</div>
-                <div class="feature">WiFi gratis</div>
-                <div class="feature">Desayuno</div>
+                <div class="feature">Wifi - SI</div>
+                <div class="feature">Admite Mascotas - SI</div>
+                <div class="feature">Ropa Blanca - SI</div>
+                <div class="feature">Baño Privado - SI</div>
+                <div class="feature">Aire Acondicionado - SI</div>
+                <div class="feature">Calefacción - SI</div>
+                <div class="feature">Cocina - SI</div>
+                <div class="feature">Estacionamiento - SI</div>
             </div>
             
             <div class="price-section" style="display: none;">
