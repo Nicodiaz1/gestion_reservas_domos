@@ -24,6 +24,22 @@
         </div>
 
         <div class="content">
+            <div class="filters-bar">
+                <div class="filter-group">
+                    <label for="filtro-fecha-inicio">Desde</label>
+                    <input type="date" id="filtro-fecha-inicio">
+                </div>
+                <div class="filter-group">
+                    <label for="filtro-fecha-fin">Hasta</label>
+                    <input type="date" id="filtro-fecha-fin">
+                </div>
+                <div class="filter-group filter-search">
+                    <label for="filtro-busqueda">Buscar cliente</label>
+                    <input type="text" id="filtro-busqueda" placeholder="Nombre, email o teléfono">
+                </div>
+                <button class="btn btn-secondary" id="filtro-limpiar">Limpiar</button>
+            </div>
+
             <!-- TAB: RESERVAS -->
             <div id="tab-reservas" class="tab-content active">
                 <h2>Reservas Activas</h2>
@@ -62,6 +78,72 @@
         });
 
         // ========== RESERVAS ==========
+        let reservasCache = [];
+
+        function normalizarTexto(valor) {
+            return (valor || '').toString().toLowerCase().trim();
+        }
+
+        function filtrarReservas(lista) {
+            const fechaInicioFiltro = document.getElementById('filtro-fecha-inicio').value;
+            const fechaFinFiltro = document.getElementById('filtro-fecha-fin').value;
+            const busqueda = normalizarTexto(document.getElementById('filtro-busqueda').value);
+
+            const filtroInicio = fechaInicioFiltro ? new Date(fechaInicioFiltro) : null;
+            const filtroFin = fechaFinFiltro ? new Date(fechaFinFiltro) : null;
+
+            return lista.filter(r => {
+                const inicio = new Date(r.fecha_inicio);
+                const fin = new Date(r.fecha_fin);
+
+                const coincideTexto = !busqueda || [
+                    normalizarTexto(r.nombre_cliente),
+                    normalizarTexto(r.email_cliente),
+                    normalizarTexto(r.telefono_cliente),
+                    normalizarTexto(r.domo_nombre)
+                ].some(valor => valor.includes(busqueda));
+
+                let coincideFecha = true;
+                if (filtroInicio && filtroFin) {
+                    coincideFecha = fin >= filtroInicio && inicio <= filtroFin;
+                } else if (filtroInicio) {
+                    coincideFecha = fin >= filtroInicio;
+                } else if (filtroFin) {
+                    coincideFecha = inicio <= filtroFin;
+                }
+
+                return coincideTexto && coincideFecha;
+            });
+        }
+
+        function renderReservas() {
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            const activas = [];
+            const canceladas = [];
+            const finalizadas = [];
+
+            filtrarReservas(reservasCache).forEach(r => {
+                const fechaFin = new Date(r.fecha_fin);
+                if (r.estado === 'cancelada') {
+                    canceladas.push(r);
+                } else if (fechaFin < hoy) {
+                    finalizadas.push(r);
+                } else {
+                    activas.push(r);
+                }
+            });
+
+            const activasHtml = activas.map(r => buildReservaCard(r, { canCancel: true })).join('');
+            const canceladasHtml = canceladas.map(r => buildReservaCard(r, { canDelete: true })).join('');
+            const finalizadasHtml = finalizadas.map(r => buildReservaCard(r, { canDelete: true })).join('');
+
+            document.getElementById('reservasContainer').innerHTML = activasHtml || '<p>Sin reservas activas</p>';
+            document.getElementById('canceladasContainer').innerHTML = canceladasHtml || '<p>Sin reservas canceladas</p>';
+            document.getElementById('finalizadasContainer').innerHTML = finalizadasHtml || '<p>Sin reservas finalizadas</p>';
+        }
+
         function buildReservaCard(r, options = {}) {
             const actions = [];
             if (options.canCancel && r.estado === 'confirmada') {
@@ -91,32 +173,8 @@
         async function cargarReservas() {
             try {
                 const res = await fetch('/api/admin/reservas');
-                const reservas = await res.json();
-                const hoy = new Date();
-                hoy.setHours(0, 0, 0, 0);
-
-                const activas = [];
-                const canceladas = [];
-                const finalizadas = [];
-
-                reservas.forEach(r => {
-                    const fechaFin = new Date(r.fecha_fin);
-                    if (r.estado === 'cancelada') {
-                        canceladas.push(r);
-                    } else if (fechaFin < hoy) {
-                        finalizadas.push(r);
-                    } else {
-                        activas.push(r);
-                    }
-                });
-
-                const activasHtml = activas.map(r => buildReservaCard(r, { canCancel: true })).join('');
-                const canceladasHtml = canceladas.map(r => buildReservaCard(r, { canDelete: true })).join('');
-                const finalizadasHtml = finalizadas.map(r => buildReservaCard(r, { canDelete: true })).join('');
-
-                document.getElementById('reservasContainer').innerHTML = activasHtml || '<p>Sin reservas activas</p>';
-                document.getElementById('canceladasContainer').innerHTML = canceladasHtml || '<p>Sin reservas canceladas</p>';
-                document.getElementById('finalizadasContainer').innerHTML = finalizadasHtml || '<p>Sin reservas finalizadas</p>';
+                reservasCache = await res.json();
+                renderReservas();
             } catch (error) {
                 console.error('Error:', error);
             }
@@ -151,6 +209,16 @@
                 console.error('Error:', error);
             }
         }
+
+        document.getElementById('filtro-fecha-inicio').addEventListener('change', renderReservas);
+        document.getElementById('filtro-fecha-fin').addEventListener('change', renderReservas);
+        document.getElementById('filtro-busqueda').addEventListener('input', renderReservas);
+        document.getElementById('filtro-limpiar').addEventListener('click', () => {
+            document.getElementById('filtro-fecha-inicio').value = '';
+            document.getElementById('filtro-fecha-fin').value = '';
+            document.getElementById('filtro-busqueda').value = '';
+            renderReservas();
+        });
 
         // Cargar datos al iniciar
         cargarReservas();

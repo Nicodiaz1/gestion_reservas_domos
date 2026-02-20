@@ -1149,6 +1149,41 @@ table tr.cancelled td {
     margin: 32px auto 60px;
 }
 
+.filters-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(160px, 1fr)) minmax(220px, 2fr) auto;
+    gap: 12px;
+    align-items: end;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.filter-group input {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.filter-search input {
+    width: 100%;
+}
+
 .sidebar {
     background: #ffffff;
     border-radius: 14px;
@@ -1378,6 +1413,10 @@ table tr.cancelled td {
     }
 
     .reservas-list {
+        grid-template-columns: 1fr;
+    }
+
+    .filters-bar {
         grid-template-columns: 1fr;
     }
 }
