@@ -883,10 +883,6 @@ main {
         font-size: 16px;
     }
 
-    .hero-actions .btn-primary {
-        width: 100%;
-    }
-
     .section-header h2 {
         font-size: 28px;
     }
@@ -1119,7 +1115,6 @@ main {
 .btn-primary {
     background: #2d7038;
     color: white;
-    width: 20%;
 }
 
 .btn-primary:hover {
