@@ -100,11 +100,21 @@ def asegurar_columnas():
     """Asegura columnas nuevas sin migraciones formales"""
     try:
         inspector = inspect(db.engine)
+        
+        # Columna image_url en promociones
         if inspector.has_table('promociones'):
             columnas = [col['name'] for col in inspector.get_columns('promociones')]
             if 'image_url' not in columnas:
                 db.session.execute(text('ALTER TABLE promociones ADD COLUMN image_url VARCHAR(500)'))
                 db.session.commit()
+        
+        # Columna tipo_check en reservas
+        if inspector.has_table('reservas'):
+            columnas = [col['name'] for col in inspector.get_columns('reservas')]
+            if 'tipo_check' not in columnas:
+                db.session.execute(text("ALTER TABLE reservas ADD COLUMN tipo_check VARCHAR(20) DEFAULT 'normal'"))
+                db.session.commit()
+                
     except Exception as e:
         db.session.rollback()
         print(f"✗ Error agregando columnas: {e}")
@@ -544,6 +554,26 @@ def cancelar_reserva(reserva_id):
     db.session.commit()
     
     return jsonify({'mensaje': 'Reserva cancelada'}), 200
+
+@app.route('/api/admin/reserva/<int:reserva_id>/tipo_check', methods=['PUT'])
+@admin_required
+def actualizar_tipo_check(reserva_id):
+    """Actualiza el tipo de check de una reserva"""
+    reserva = Reserva.query.get(reserva_id)
+    
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+    
+    data = request.get_json()
+    tipo_check = data.get('tipo_check')
+    
+    if tipo_check not in ['normal', 'early_checkin', 'late_checkout']:
+        return jsonify({'error': 'Tipo de check inválido'}), 400
+    
+    reserva.tipo_check = tipo_check
+    db.session.commit()
+    
+    return jsonify({'mensaje': 'Tipo de check actualizado', 'tipo_check': tipo_check}), 200
 
 @app.route('/api/admin/reserva/<int:reserva_id>/eliminar', methods=['DELETE'])
 @admin_required

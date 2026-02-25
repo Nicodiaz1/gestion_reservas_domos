@@ -47,6 +47,7 @@ class Reserva(db.Model):
     
     # Estado
     estado = db.Column(db.String(20), default='confirmada')  # confirmada, cancelada
+    tipo_check = db.Column(db.String(20), default='normal')  # normal, early_checkin, late_checkout
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
     
     def to_dict(self):
@@ -58,7 +59,8 @@ class Reserva(db.Model):
             'telefono_cliente': self.telefono_cliente,
             'fecha_inicio': self.fecha_inicio.isoformat(),
             'fecha_fin': self.fecha_fin.isoformat(),
-            'estado': self.estado
+            'estado': self.estado,
+            'tipo_check': self.tipo_check
         }
 
 class Configuracion(db.Model):

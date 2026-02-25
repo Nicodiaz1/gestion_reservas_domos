@@ -223,6 +223,31 @@
                 actions.push(`<button class="btn btn-secondary" onclick="eliminarReserva(${r.id})">Eliminar</button>`);
             }
 
+            // Etiquetas para tipo_check
+            const tipoCheckLabels = {
+                'normal': 'Normal',
+                'early_checkin': 'Early Check-in',
+                'late_checkout': 'Late Checkout'
+            };
+            
+            // Dropdown para cambiar tipo_check en reservas activas
+            let tipoCheckHTML = '';
+            if (options.canCancel && r.estado === 'confirmada') {
+                tipoCheckHTML = `
+                    <div style="margin-top: 12px;">
+                        <label style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Tipo de Check:</label>
+                        <select onchange="cambiarTipoCheck(${r.id}, this.value)" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; width: 100%;">
+                            <option value="normal" ${r.tipo_check === 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="early_checkin" ${r.tipo_check === 'early_checkin' ? 'selected' : ''}>Early Check-in</option>
+                            <option value="late_checkout" ${r.tipo_check === 'late_checkout' ? 'selected' : ''}>Late Checkout</option>
+                        </select>
+                    </div>
+                `;
+            } else {
+                // Solo mostrar el tipo en reservas no activas
+                tipoCheckHTML = `<p><strong>Tipo:</strong> ${tipoCheckLabels[r.tipo_check] || 'Normal'}</p>`;
+            }
+
             return `
                 <div class="reserva-card">
                     <div class="reserva-header">
@@ -234,6 +259,7 @@
                         <p><strong>Email:</strong> ${r.email_cliente || 'N/A'}</p>
                         <p><strong>Teléfono:</strong> ${r.telefono_cliente || 'N/A'}</p>
                         <p><strong>Fechas:</strong> ${r.fecha_inicio} a ${r.fecha_fin}</p>
+                        ${tipoCheckHTML}
                     </div>
                     ${actions.length ? `<div class="reserva-actions">${actions.join('')}</div>` : ''}
                 </div>
@@ -261,6 +287,25 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
+            }
+        }
+
+        async function cambiarTipoCheck(reservaId, tipoCheck) {
+            try {
+                const res = await fetch(`/api/admin/reserva/${reservaId}/tipo_check`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tipo_check: tipoCheck })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    cargarReservas();
+                } else {
+                    alert(data.error || 'Error al actualizar');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al actualizar tipo de check');
             }
         }
 
