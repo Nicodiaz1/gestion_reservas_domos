@@ -149,7 +149,7 @@ class DocumentoInstrucciones(db.Model):
     nombre = db.Column(db.String(150), nullable=False)
     archivo_url = db.Column(db.String(500), nullable=False)
     descripcion = db.Column(db.String(300))
-    activo = db.Column(db.Boolean, default=False)
+    activo = db.Column('es_activo', db.Boolean, default=False)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
