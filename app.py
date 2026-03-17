@@ -820,11 +820,12 @@ def admin_documentos_instrucciones_crear():
         return jsonify({'error': 'Archivo inválido. Solo PDF'}), 400
 
     try:
+        existe_activo = DocumentoInstrucciones.query.filter_by(activo=True).first() is not None
         doc = DocumentoInstrucciones(
             nombre=nombre,
             descripcion=descripcion,
             archivo_url=url_doc,
-            activo=False
+            activo=not existe_activo
         )
         db.session.add(doc)
         db.session.commit()
@@ -947,7 +948,9 @@ def admin_enviar_instrucciones(reserva_id):
 
     documento = DocumentoInstrucciones.query.filter_by(activo=True).first()
     if not documento:
-        return jsonify({'error': 'No hay un PDF activo de instrucciones'}), 400
+        documento = DocumentoInstrucciones.query.order_by(DocumentoInstrucciones.fecha_creacion.desc()).first()
+    if not documento:
+        return jsonify({'error': 'No hay PDFs de instrucciones cargados'}), 400
 
     base_url = request.host_url.rstrip('/')
     pdf_url = f"{base_url}{documento.archivo_url}"
