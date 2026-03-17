@@ -20,6 +20,8 @@
                 <button class="nav-btn active" data-tab="reservas">📋 Reservas</button>
                 <button class="nav-btn" data-tab="canceladas">❌ Canceladas</button>
                 <button class="nav-btn" data-tab="finalizadas">✅ Finalizadas</button>
+                <button class="nav-btn" data-tab="pagos">💳 Pagos</button>
+                <button class="nav-btn" data-tab="instrucciones">📄 Instrucciones PDF</button>
                 <button class="nav-btn" data-tab="galeria">🖼️ Galería</button>
                 <button class="nav-btn" data-tab="promociones">🏷️ Promociones</button>
             </nav>
@@ -62,6 +64,40 @@
             <div id="tab-finalizadas" class="tab-content">
                 <h2>Reservas Finalizadas</h2>
                 <div id="finalizadasContainer" class="reservas-list">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <!-- TAB: PAGOS -->
+            <div id="tab-pagos" class="tab-content">
+                <h2>Pagos</h2>
+                <div id="pagosContainer" class="reservas-list">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+
+            <!-- TAB: INSTRUCCIONES PDF -->
+            <div id="tab-instrucciones" class="tab-content">
+                <h2>Instrucciones PDF</h2>
+                <div class="card" style="margin-bottom: 16px;">
+                    <h3 style="margin-bottom: 12px;">Subir nuevo PDF</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="doc-nombre">Nombre</label>
+                            <input type="text" id="doc-nombre" placeholder="Ej: Instrucciones de ingreso">
+                        </div>
+                        <div class="form-group">
+                            <label for="doc-descripcion">Descripción (opcional)</label>
+                            <input type="text" id="doc-descripcion" placeholder="Versión 2026">
+                        </div>
+                        <div class="form-group">
+                            <label for="doc-file">Archivo PDF</label>
+                            <input type="file" id="doc-file" accept="application/pdf,.pdf">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="doc-guardar">Subir PDF</button>
+                </div>
+                <div id="documentosContainer" class="reservas-list">
                     <p>Cargando...</p>
                 </div>
             </div>
@@ -478,8 +514,202 @@
             }
         });
 
+        // ========== PAGOS ==========
+        let pagosAdminCache = [];
+
+        async function cargarPagosAdmin() {
+            try {
+                const res = await fetch('/api/admin/pagos');
+                const data = await res.json();
+            pagosAdminCache = data;
+                const html = data.map(p => {
+                    const pendiente = (Number(p.monto_a_pagar || 0) - Number(p.monto_pagado || 0));
+                    return `
+                        <div class="reserva-card">
+                            <div class="reserva-header">
+                                <h3>${p.domo_nombre}</h3>
+                                <span class="status ${p.estado_pago === 'pagado' ? 'confirmada' : 'cancelada'}">${p.estado_pago}</span>
+                            </div>
+                            <div class="reserva-body">
+                                <p><strong>Cliente:</strong> ${p.nombre_cliente}</p>
+                                <p><strong>Fechas:</strong> ${p.fecha_inicio} a ${p.fecha_fin}</p>
+                                <p><strong>Monto total:</strong> $${Number(p.monto_a_pagar || 0).toFixed(2)}</p>
+                                <p><strong>Pagado:</strong> $${Number(p.monto_pagado || 0).toFixed(2)}</p>
+                                <p><strong>Pendiente:</strong> $${pendiente.toFixed(2)}</p>
+                                <p><strong>Instrucciones enviadas:</strong> ${p.instrucciones_enviadas ? 'Sí' : 'No'}</p>
+                                ${p.nota_pago ? `<p><strong>Nota:</strong> ${p.nota_pago}</p>` : ''}
+                            </div>
+                            <div class="reserva-actions">
+                                <button class="btn btn-primary" onclick="editarPagoReserva(${p.reserva_id})">Editar pago</button>
+                                <button class="btn btn-secondary" onclick="enviarInstrucciones(${p.reserva_id})">Enviar instrucciones</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('pagosContainer').innerHTML = html || '<p>Sin reservas para mostrar</p>';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('pagosContainer').innerHTML = '<p>Error cargando pagos</p>';
+            }
+        }
+
+        async function editarPagoReserva(reservaId) {
+            const actual = pagosAdminCache.find(p => p.reserva_id === reservaId);
+            if (!actual) return;
+
+            const montoTotalInput = prompt('Monto total acordado', Number(actual.monto_a_pagar || 0));
+            if (montoTotalInput === null) return;
+            const montoPagadoInput = prompt('Monto pagado', Number(actual.monto_pagado || 0));
+            if (montoPagadoInput === null) return;
+            const notaInput = prompt('Nota de pago (opcional)', actual.nota_pago || '');
+            if (notaInput === null) return;
+
+            try {
+                const res = await fetch(`/api/admin/pagos/${reservaId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        monto_a_pagar: Number(montoTotalInput),
+                        monto_pagado: Number(montoPagadoInput),
+                        nota_pago: notaInput
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo actualizar el pago');
+                    return;
+                }
+                alert('Pago actualizado');
+                cargarPagosAdmin();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error actualizando pago');
+            }
+        }
+
+        async function enviarInstrucciones(reservaId) {
+            const canal = prompt('Canal de envío: whatsapp o email', 'whatsapp');
+            if (!canal) return;
+            const mensaje = prompt('Mensaje adicional (opcional)', '') || '';
+
+            try {
+                const res = await fetch(`/api/admin/instrucciones/enviar/${reservaId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ canal: canal.toLowerCase(), mensaje })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo generar el envío');
+                    return;
+                }
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+                cargarPagosAdmin();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error enviando instrucciones');
+            }
+        }
+
+        // ========== DOCUMENTOS INSTRUCCIONES ==========
+        async function cargarDocumentosInstrucciones() {
+            try {
+                const res = await fetch('/api/admin/documentos-instrucciones');
+                const data = await res.json();
+                const html = data.map(d => `
+                    <div class="reserva-card">
+                        <div class="reserva-header">
+                            <h3>${d.nombre}</h3>
+                            <span class="status ${d.activo ? 'confirmada' : 'cancelada'}">${d.activo ? 'activo' : 'inactivo'}</span>
+                        </div>
+                        <div class="reserva-body">
+                            <p><strong>Descripción:</strong> ${d.descripcion || 'N/A'}</p>
+                            <p><a href="${d.archivo_url}" target="_blank">Ver PDF</a></p>
+                        </div>
+                        <div class="reserva-actions">
+                            <button class="btn btn-primary" onclick="activarDocumento(${d.id})">Activar</button>
+                            <button class="btn btn-secondary" onclick="eliminarDocumento(${d.id})">Eliminar</button>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('documentosContainer').innerHTML = html || '<p>Sin PDFs cargados</p>';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('documentosContainer').innerHTML = '<p>Error cargando documentos</p>';
+            }
+        }
+
+        document.getElementById('doc-guardar').addEventListener('click', async () => {
+            const nombre = document.getElementById('doc-nombre').value.trim();
+            const descripcion = document.getElementById('doc-descripcion').value.trim();
+            const file = document.getElementById('doc-file').files[0];
+
+            if (!nombre || !file) {
+                alert('Nombre y archivo PDF requeridos');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('nombre', nombre);
+            formData.append('descripcion', descripcion);
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/admin/documentos-instrucciones', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo subir el PDF');
+                    return;
+                }
+
+                document.getElementById('doc-nombre').value = '';
+                document.getElementById('doc-descripcion').value = '';
+                document.getElementById('doc-file').value = '';
+                cargarDocumentosInstrucciones();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error subiendo PDF');
+            }
+        });
+
+        async function activarDocumento(documentoId) {
+            try {
+                const res = await fetch(`/api/admin/documentos-instrucciones/${documentoId}/activar`, { method: 'PUT' });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo activar el PDF');
+                    return;
+                }
+                cargarDocumentosInstrucciones();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarDocumento(documentoId) {
+            if (!confirm('¿Eliminar este PDF?')) return;
+            try {
+                const res = await fetch(`/api/admin/documentos-instrucciones/${documentoId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || 'No se pudo eliminar el PDF');
+                    return;
+                }
+                cargarDocumentosInstrucciones();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
         // Cargar datos al iniciar
         cargarReservas();
+        cargarPagosAdmin();
+        cargarDocumentosInstrucciones();
         cargarGaleriaAdmin();
         cargarPromosAdmin();
     </script>

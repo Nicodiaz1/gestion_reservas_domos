@@ -139,3 +139,53 @@ class Promocion(db.Model):
             'image_url': self.image_url,
             'orden': self.orden
         }
+
+
+class DocumentoInstrucciones(db.Model):
+    """PDFs predefinidos de instrucciones para huéspedes"""
+    __tablename__ = 'documentos_instrucciones'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(150), nullable=False)
+    archivo_url = db.Column(db.String(500), nullable=False)
+    descripcion = db.Column(db.String(300))
+    activo = db.Column(db.Boolean, default=False)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'nombre': self.nombre,
+            'archivo_url': self.archivo_url,
+            'descripcion': self.descripcion,
+            'activo': self.activo,
+            'fecha_creacion': self.fecha_creacion.isoformat()
+        }
+
+
+class ReservaPago(db.Model):
+    """Seguimiento administrativo de pagos por reserva"""
+    __tablename__ = 'reserva_pagos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    reserva_id = db.Column(db.Integer, db.ForeignKey('reservas.id'), nullable=False, unique=True)
+    monto_a_pagar = db.Column(db.Float, default=0.0)
+    monto_pagado = db.Column(db.Float, default=0.0)
+    estado_pago = db.Column(db.String(20), default='pendiente')  # pendiente, parcial, pagado
+    nota_pago = db.Column(db.String(300))
+    instrucciones_enviadas = db.Column(db.Boolean, default=False)
+    fecha_actualizacion = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    reserva = db.relationship('Reserva', backref=db.backref('pago', uselist=False, lazy=True))
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'reserva_id': self.reserva_id,
+            'monto_a_pagar': self.monto_a_pagar,
+            'monto_pagado': self.monto_pagado,
+            'estado_pago': self.estado_pago,
+            'nota_pago': self.nota_pago,
+            'instrucciones_enviadas': self.instrucciones_enviadas,
+            'fecha_actualizacion': self.fecha_actualizacion.isoformat() if self.fecha_actualizacion else None
+        }

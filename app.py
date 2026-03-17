@@ -7,16 +7,21 @@ import json
 import uuid
 from sqlalchemy import inspect, text
 from werkzeug.utils import secure_filename
+from urllib.parse import quote_plus
 from config import Config
-from models import db, Domo, Reserva, Configuracion, Feriado, GaleriaFoto, Promocion
+from models import db, Domo, Reserva, Configuracion, Feriado, GaleriaFoto, Promocion, DocumentoInstrucciones, ReservaPago
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+DOCS_FOLDER = os.path.join(app.root_path, 'static', 'docs')
+ALLOWED_DOC_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['DOCS_FOLDER'] = DOCS_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(DOCS_FOLDER, exist_ok=True)
 
 db.init_app(app)
 
@@ -33,6 +38,20 @@ def save_uploaded_file(file_storage):
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
     file_storage.save(file_path)
     return f"/static/uploads/{unique_name}"
+
+def allowed_doc_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOC_EXTENSIONS
+
+def save_uploaded_doc(file_storage):
+    if not file_storage or file_storage.filename == '':
+        return None
+    if not allowed_doc_file(file_storage.filename):
+        return None
+    filename = secure_filename(file_storage.filename)
+    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    file_path = os.path.join(app.config['DOCS_FOLDER'], unique_name)
+    file_storage.save(file_path)
+    return f"/static/docs/{unique_name}"
 
 def admin_required(f):
     """Decorador para rutas que requieren autenticación de admin"""
@@ -737,6 +756,203 @@ def admin_promociones_eliminar(promo_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+# ==================== ADMIN PAGOS E INSTRUCCIONES ====================
+
+def obtener_o_crear_pago(reserva):
+    pago = ReservaPago.query.filter_by(reserva_id=reserva.id).first()
+    if not pago:
+        pago = ReservaPago(reserva_id=reserva.id)
+        db.session.add(pago)
+        db.session.flush()
+    return pago
+
+
+@app.route('/api/admin/documentos-instrucciones', methods=['GET'])
+@admin_required
+def admin_documentos_instrucciones_listar():
+    documentos = DocumentoInstrucciones.query.order_by(DocumentoInstrucciones.fecha_creacion.desc()).all()
+    return jsonify([d.to_dict() for d in documentos]), 200
+
+
+@app.route('/api/admin/documentos-instrucciones', methods=['POST'])
+@admin_required
+def admin_documentos_instrucciones_crear():
+    nombre = (request.form.get('nombre') or '').strip()
+    descripcion = (request.form.get('descripcion') or '').strip() or None
+    archivo = request.files.get('file')
+
+    if not nombre:
+        return jsonify({'error': 'Nombre requerido'}), 400
+    if not archivo:
+        return jsonify({'error': 'Archivo requerido'}), 400
+
+    url_doc = save_uploaded_doc(archivo)
+    if not url_doc:
+        return jsonify({'error': 'Archivo inválido. Solo PDF'}), 400
+
+    try:
+        doc = DocumentoInstrucciones(
+            nombre=nombre,
+            descripcion=descripcion,
+            archivo_url=url_doc,
+            activo=False
+        )
+        db.session.add(doc)
+        db.session.commit()
+        return jsonify(doc.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/documentos-instrucciones/<int:documento_id>/activar', methods=['PUT'])
+@admin_required
+def admin_documentos_instrucciones_activar(documento_id):
+    doc = DocumentoInstrucciones.query.get(documento_id)
+    if not doc:
+        return jsonify({'error': 'Documento no encontrado'}), 404
+
+    try:
+        DocumentoInstrucciones.query.update({'activo': False})
+        doc.activo = True
+        db.session.commit()
+        return jsonify({'mensaje': 'Documento activo actualizado'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/documentos-instrucciones/<int:documento_id>', methods=['DELETE'])
+@admin_required
+def admin_documentos_instrucciones_eliminar(documento_id):
+    doc = DocumentoInstrucciones.query.get(documento_id)
+    if not doc:
+        return jsonify({'error': 'Documento no encontrado'}), 404
+
+    try:
+        if doc.archivo_url and doc.archivo_url.startswith('/static/docs/'):
+            nombre_archivo = doc.archivo_url.replace('/static/docs/', '')
+            ruta_archivo = os.path.join(app.config['DOCS_FOLDER'], nombre_archivo)
+            if os.path.exists(ruta_archivo):
+                os.remove(ruta_archivo)
+
+        db.session.delete(doc)
+        db.session.commit()
+        return jsonify({'mensaje': 'Documento eliminado'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/pagos', methods=['GET'])
+@admin_required
+def admin_pagos_listar():
+    reservas = Reserva.query.order_by(Reserva.fecha_inicio.desc()).all()
+    resultado = []
+
+    for reserva in reservas:
+        pago = ReservaPago.query.filter_by(reserva_id=reserva.id).first()
+        resultado.append({
+            'reserva_id': reserva.id,
+            'domo_nombre': reserva.domo.nombre if reserva.domo else 'Domo',
+            'nombre_cliente': reserva.nombre_cliente,
+            'email_cliente': reserva.email_cliente,
+            'telefono_cliente': reserva.telefono_cliente,
+            'fecha_inicio': reserva.fecha_inicio.isoformat(),
+            'fecha_fin': reserva.fecha_fin.isoformat(),
+            'estado_reserva': reserva.estado,
+            'monto_a_pagar': pago.monto_a_pagar if pago else 0,
+            'monto_pagado': pago.monto_pagado if pago else 0,
+            'estado_pago': pago.estado_pago if pago else 'pendiente',
+            'nota_pago': pago.nota_pago if pago else None,
+            'instrucciones_enviadas': pago.instrucciones_enviadas if pago else False
+        })
+
+    return jsonify(resultado), 200
+
+
+@app.route('/api/admin/pagos/<int:reserva_id>', methods=['PUT'])
+@admin_required
+def admin_pagos_actualizar(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+
+    data = request.json or {}
+
+    try:
+        pago = obtener_o_crear_pago(reserva)
+
+        monto_a_pagar = float(data.get('monto_a_pagar', pago.monto_a_pagar or 0))
+        monto_pagado = float(data.get('monto_pagado', pago.monto_pagado or 0))
+
+        if monto_pagado <= 0:
+            estado_pago = 'pendiente'
+        elif monto_pagado < monto_a_pagar:
+            estado_pago = 'parcial'
+        else:
+            estado_pago = 'pagado'
+
+        pago.monto_a_pagar = monto_a_pagar
+        pago.monto_pagado = monto_pagado
+        pago.estado_pago = estado_pago
+        pago.nota_pago = (data.get('nota_pago') or '').strip() or None
+
+        db.session.commit()
+        return jsonify({'mensaje': 'Pago actualizado', 'pago': pago.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/admin/instrucciones/enviar/<int:reserva_id>', methods=['POST'])
+@admin_required
+def admin_enviar_instrucciones(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+
+    data = request.json or {}
+    canal = (data.get('canal') or 'whatsapp').strip().lower()
+    mensaje_extra = (data.get('mensaje') or '').strip()
+
+    documento = DocumentoInstrucciones.query.filter_by(activo=True).first()
+    if not documento:
+        return jsonify({'error': 'No hay un PDF activo de instrucciones'}), 400
+
+    base_url = request.host_url.rstrip('/')
+    pdf_url = f"{base_url}{documento.archivo_url}"
+
+    mensaje_whatsapp = (
+        f"Hola {reserva.nombre_cliente}!\n"
+        f"Te compartimos las instrucciones de ingreso para tu estadía en {reserva.domo.nombre if reserva.domo else 'el domo'}.\n"
+        f"PDF: {pdf_url}\n"
+    )
+    if mensaje_extra:
+        mensaje_whatsapp += f"{mensaje_extra}\n"
+
+    try:
+        pago = obtener_o_crear_pago(reserva)
+        pago.instrucciones_enviadas = True
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+    if canal == 'email':
+        asunto = quote_plus('Instrucciones de ingreso - Reserva de domo')
+        cuerpo = quote_plus(
+            f"Hola {reserva.nombre_cliente},\n\n"
+            f"Te compartimos las instrucciones de ingreso:\n{pdf_url}\n\n"
+            f"Gracias."
+        )
+        mailto = f"mailto:{reserva.email_cliente or ''}?subject={asunto}&body={cuerpo}"
+        return jsonify({'canal': 'email', 'url': mailto}), 200
+
+    telefono = (reserva.telefono_cliente or '').replace(' ', '').replace('+', '').replace('-', '')
+    whatsapp_url = f"https://wa.me/{telefono}?text={quote_plus(mensaje_whatsapp)}"
+    return jsonify({'canal': 'whatsapp', 'url': whatsapp_url}), 200
 
 @app.route('/api/admin/feriados', methods=['GET', 'POST'])
 @admin_required
