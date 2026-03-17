@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, session, url_for
+from flask import Flask, render_template, request, jsonify, redirect, session, url_for, send_file
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from functools import wraps
@@ -49,9 +49,26 @@ def save_uploaded_doc(file_storage):
         return None
     filename = secure_filename(file_storage.filename)
     unique_name = f"{uuid.uuid4().hex}_{filename}"
-    file_path = os.path.join(app.config['DOCS_FOLDER'], unique_name)
+    # Guardar en uploads para mantener el mismo flujo que imágenes
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
     file_storage.save(file_path)
-    return f"/static/docs/{unique_name}"
+    return f"/static/uploads/{unique_name}"
+
+
+def resolver_ruta_documento(archivo_url):
+    """Resuelve ruta física del PDF soportando esquemas previos y actuales"""
+    if not archivo_url:
+        return None
+
+    nombre = archivo_url.split('/')[-1]
+    posibles = [
+        os.path.join(app.config['UPLOAD_FOLDER'], nombre),
+        os.path.join(app.config['DOCS_FOLDER'], nombre)
+    ]
+    for ruta in posibles:
+        if os.path.exists(ruta):
+            return ruta
+    return None
 
 def admin_required(f):
     """Decorador para rutas que requieren autenticación de admin"""
@@ -860,11 +877,9 @@ def admin_documentos_instrucciones_eliminar(documento_id):
         return jsonify({'error': 'Documento no encontrado'}), 404
 
     try:
-        if doc.archivo_url and doc.archivo_url.startswith('/static/docs/'):
-            nombre_archivo = doc.archivo_url.replace('/static/docs/', '')
-            ruta_archivo = os.path.join(app.config['DOCS_FOLDER'], nombre_archivo)
-            if os.path.exists(ruta_archivo):
-                os.remove(ruta_archivo)
+        ruta_archivo = resolver_ruta_documento(doc.archivo_url)
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            os.remove(ruta_archivo)
 
         db.session.delete(doc)
         db.session.commit()
@@ -872,6 +887,19 @@ def admin_documentos_instrucciones_eliminar(documento_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/documentos-instrucciones/<int:documento_id>/archivo')
+def ver_documento_instrucciones(documento_id):
+    doc = DocumentoInstrucciones.query.get(documento_id)
+    if not doc:
+        return jsonify({'error': 'Documento no encontrado'}), 404
+
+    ruta_archivo = resolver_ruta_documento(doc.archivo_url)
+    if not ruta_archivo:
+        return jsonify({'error': 'Archivo no encontrado'}), 404
+
+    return send_file(ruta_archivo, mimetype='application/pdf')
 
 
 @app.route('/api/admin/pagos', methods=['GET'])
@@ -953,7 +981,7 @@ def admin_enviar_instrucciones(reserva_id):
         return jsonify({'error': 'No hay PDFs de instrucciones cargados'}), 400
 
     base_url = request.host_url.rstrip('/')
-    pdf_url = f"{base_url}{documento.archivo_url}"
+    pdf_url = f"{base_url}/api/documentos-instrucciones/{documento.id}/archivo"
 
     mensaje_whatsapp = (
         f"Hola {reserva.nombre_cliente}!\n"

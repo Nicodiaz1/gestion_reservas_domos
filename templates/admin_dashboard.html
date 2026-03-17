@@ -678,7 +678,7 @@
                         </div>
                         <div class="reserva-body">
                             <p><strong>Descripción:</strong> ${d.descripcion || 'N/A'}</p>
-                            <p><a href="${d.archivo_url}" target="_blank">Ver PDF</a></p>
+                            <p><a href="/api/documentos-instrucciones/${d.id}/archivo" target="_blank">Ver PDF</a></p>
                         </div>
                         <div class="reserva-actions">
                             <button class="btn btn-primary" onclick="activarDocumento(${d.id})">Activar</button>
