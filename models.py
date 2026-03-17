@@ -149,6 +149,7 @@ class DocumentoInstrucciones(db.Model):
     nombre = db.Column(db.String(150), nullable=False)
     # Compatibilidad BD existente: la columna física es archivo_pdf (NOT NULL)
     archivo_url = db.Column('archivo_pdf', db.String(500), nullable=False)
+    archivo_blob = db.Column(db.LargeBinary)
     descripcion = db.Column(db.String(300))
     activo = db.Column('es_activo', db.Boolean, default=False)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow)

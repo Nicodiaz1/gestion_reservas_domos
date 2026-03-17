@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from functools import wraps
 import os
+import io
 import json
 import uuid
 from sqlalchemy import inspect, text
@@ -172,6 +173,15 @@ def asegurar_columnas():
                 if 'activo' in columnas_docs:
                     db.session.execute(text("UPDATE documentos_instrucciones SET es_activo = activo WHERE es_activo IS NULL"))
                     db.session.commit()
+
+            # Respaldo en base para entornos efímeros (Railway)
+            if 'archivo_blob' not in columnas_docs:
+                try:
+                    db.session.execute(text("ALTER TABLE documentos_instrucciones ADD COLUMN archivo_blob BYTEA"))
+                except Exception:
+                    db.session.rollback()
+                    db.session.execute(text("ALTER TABLE documentos_instrucciones ADD COLUMN archivo_blob BLOB"))
+                db.session.commit()
 
         # Tabla de pagos por reserva
         if not inspector.has_table('reserva_pagos'):
@@ -832,9 +842,24 @@ def admin_documentos_instrucciones_crear():
     if not archivo:
         return jsonify({'error': 'Archivo requerido'}), 400
 
-    url_doc = save_uploaded_doc(archivo)
-    if not url_doc:
+    if not allowed_doc_file(archivo.filename or ''):
         return jsonify({'error': 'Archivo inválido. Solo PDF'}), 400
+
+    contenido_pdf = archivo.read()
+    if not contenido_pdf:
+        return jsonify({'error': 'El PDF está vacío'}), 400
+
+    filename = secure_filename(archivo.filename)
+    unique_name = f"{uuid.uuid4().hex}_{filename}"
+    url_doc = f"/static/uploads/{unique_name}"
+    ruta_archivo = os.path.join(app.config['UPLOAD_FOLDER'], unique_name)
+
+    # Mejor esfuerzo: guardar también en disco
+    try:
+        with open(ruta_archivo, 'wb') as f:
+            f.write(contenido_pdf)
+    except Exception:
+        pass
 
     try:
         existe_activo = DocumentoInstrucciones.query.filter_by(activo=True).first() is not None
@@ -842,6 +867,7 @@ def admin_documentos_instrucciones_crear():
             nombre=nombre,
             descripcion=descripcion,
             archivo_url=url_doc,
+            archivo_blob=contenido_pdf,
             activo=not existe_activo
         )
         db.session.add(doc)
@@ -896,10 +922,17 @@ def ver_documento_instrucciones(documento_id):
         return jsonify({'error': 'Documento no encontrado'}), 404
 
     ruta_archivo = resolver_ruta_documento(doc.archivo_url)
-    if not ruta_archivo:
-        return jsonify({'error': 'Archivo no encontrado'}), 404
+    if ruta_archivo:
+        return send_file(ruta_archivo, mimetype='application/pdf')
 
-    return send_file(ruta_archivo, mimetype='application/pdf')
+    if doc.archivo_blob:
+        return send_file(
+            io.BytesIO(doc.archivo_blob),
+            mimetype='application/pdf',
+            download_name=f"{secure_filename(doc.nombre or 'instrucciones')}.pdf"
+        )
+
+    return jsonify({'error': 'Archivo no encontrado'}), 404
 
 
 @app.route('/api/admin/pagos', methods=['GET'])
