@@ -147,6 +147,15 @@ def asegurar_columnas():
                     db.session.execute(text("UPDATE documentos_instrucciones SET archivo_url = archivo_pdf WHERE archivo_url IS NULL"))
                     db.session.commit()
 
+            # Compatibilidad: algunas versiones usaban es_activo
+            if 'activo' not in columnas_docs:
+                db.session.execute(text("ALTER TABLE documentos_instrucciones ADD COLUMN activo BOOLEAN DEFAULT FALSE"))
+                db.session.commit()
+
+                if 'es_activo' in columnas_docs:
+                    db.session.execute(text("UPDATE documentos_instrucciones SET activo = es_activo WHERE activo IS NULL"))
+                    db.session.commit()
+
         # Tabla de pagos por reserva
         if not inspector.has_table('reserva_pagos'):
             db.create_all()
