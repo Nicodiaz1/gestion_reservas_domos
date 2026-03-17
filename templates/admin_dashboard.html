@@ -71,6 +71,22 @@
             <!-- TAB: PAGOS -->
             <div id="tab-pagos" class="tab-content">
                 <h2>Pagos</h2>
+                <div class="filters-bar" style="margin-bottom: 16px;">
+                    <div class="filter-group">
+                        <label for="filtro-pago-estado">Estado de pago</label>
+                        <select id="filtro-pago-estado">
+                            <option value="todos">Todos</option>
+                            <option value="pagado">Pago completo</option>
+                            <option value="parcial">Pago parcial</option>
+                            <option value="pendiente">Pago sin registrar</option>
+                        </select>
+                    </div>
+                    <div class="filter-group filter-search">
+                        <label for="filtro-pago-busqueda">Buscar</label>
+                        <input type="text" id="filtro-pago-busqueda" placeholder="Cliente, email o teléfono">
+                    </div>
+                    <button class="btn btn-secondary" id="filtro-pago-limpiar">Limpiar</button>
+                </div>
                 <div id="pagosContainer" class="reservas-list">
                     <p>Cargando...</p>
                 </div>
@@ -517,69 +533,100 @@
         // ========== PAGOS ==========
         let pagosAdminCache = [];
 
+        function pagosFiltrados() {
+            const estado = document.getElementById('filtro-pago-estado').value;
+            const q = (document.getElementById('filtro-pago-busqueda').value || '').toLowerCase().trim();
+
+            return pagosAdminCache.filter(p => {
+                const okEstado = estado === 'todos' || (p.estado_pago || 'pendiente') === estado;
+                const texto = `${p.nombre_cliente || ''} ${p.email_cliente || ''} ${p.telefono_cliente || ''}`.toLowerCase();
+                const okBusqueda = !q || texto.includes(q);
+                return okEstado && okBusqueda;
+            });
+        }
+
+        function renderPagosAdmin() {
+            const data = pagosFiltrados();
+            const html = data.map(p => {
+                const montoTotal = Number(p.monto_a_pagar || 0);
+                const montoPagado = Number(p.monto_pagado || 0);
+                const pendiente = montoTotal - montoPagado;
+                const estadoPago = p.estado_pago || 'pendiente';
+
+                return `
+                    <div class="reserva-card">
+                        <div class="reserva-header">
+                            <h3>${p.domo_nombre}</h3>
+                            <span class="status ${estadoPago === 'pagado' ? 'confirmada' : 'cancelada'}">${estadoPago}</span>
+                        </div>
+                        <div class="reserva-body">
+                            <p><strong>Cliente:</strong> ${p.nombre_cliente}</p>
+                            <p><strong>Email:</strong> ${p.email_cliente || 'N/A'}</p>
+                            <p><strong>Teléfono:</strong> ${p.telefono_cliente || 'N/A'}</p>
+                            <p><strong>Fechas:</strong> ${p.fecha_inicio} a ${p.fecha_fin}</p>
+                            <p><strong>Instrucciones enviadas:</strong> ${p.instrucciones_enviadas ? 'Sí' : 'No'}</p>
+                        </div>
+                        <div class="reserva-body" style="border-top:1px solid #eee; margin-top:10px; padding-top:10px;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Monto acordado</label>
+                                    <input type="number" step="0.01" id="pago-total-${p.reserva_id}" value="${montoTotal}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Monto pagado</label>
+                                    <input type="number" step="0.01" id="pago-pagado-${p.reserva_id}" value="${montoPagado}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Nota de pago</label>
+                                <input type="text" id="pago-nota-${p.reserva_id}" value="${p.nota_pago || ''}" placeholder="Opcional">
+                            </div>
+                            <p><strong>Pendiente:</strong> $${pendiente.toFixed(2)}</p>
+                        </div>
+                        <div class="reserva-actions" style="flex-wrap:wrap; gap:8px;">
+                            <button class="btn btn-primary" onclick="guardarPagoInline(${p.reserva_id})">Guardar pago</button>
+                            <select id="canal-${p.reserva_id}" style="padding:8px 10px; border-radius:8px; border:1px solid #ddd;">
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="email">Email</option>
+                            </select>
+                            <input type="text" id="mensaje-${p.reserva_id}" placeholder="Mensaje opcional" style="flex:1; min-width:180px; padding:8px 10px; border-radius:8px; border:1px solid #ddd;">
+                            <button class="btn btn-secondary" onclick="enviarInstruccionesInline(${p.reserva_id})">Enviar instrucciones</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('pagosContainer').innerHTML = html || '<p>Sin reservas para mostrar</p>';
+        }
+
         async function cargarPagosAdmin() {
             try {
                 const res = await fetch('/api/admin/pagos');
                 const data = await res.json();
-            pagosAdminCache = data;
-                const html = data.map(p => {
-                    const pendiente = (Number(p.monto_a_pagar || 0) - Number(p.monto_pagado || 0));
-                    return `
-                        <div class="reserva-card">
-                            <div class="reserva-header">
-                                <h3>${p.domo_nombre}</h3>
-                                <span class="status ${p.estado_pago === 'pagado' ? 'confirmada' : 'cancelada'}">${p.estado_pago}</span>
-                            </div>
-                            <div class="reserva-body">
-                                <p><strong>Cliente:</strong> ${p.nombre_cliente}</p>
-                                <p><strong>Fechas:</strong> ${p.fecha_inicio} a ${p.fecha_fin}</p>
-                                <p><strong>Monto total:</strong> $${Number(p.monto_a_pagar || 0).toFixed(2)}</p>
-                                <p><strong>Pagado:</strong> $${Number(p.monto_pagado || 0).toFixed(2)}</p>
-                                <p><strong>Pendiente:</strong> $${pendiente.toFixed(2)}</p>
-                                <p><strong>Instrucciones enviadas:</strong> ${p.instrucciones_enviadas ? 'Sí' : 'No'}</p>
-                                ${p.nota_pago ? `<p><strong>Nota:</strong> ${p.nota_pago}</p>` : ''}
-                            </div>
-                            <div class="reserva-actions">
-                                <button class="btn btn-primary" onclick="editarPagoReserva(${p.reserva_id})">Editar pago</button>
-                                <button class="btn btn-secondary" onclick="enviarInstrucciones(${p.reserva_id})">Enviar instrucciones</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('pagosContainer').innerHTML = html || '<p>Sin reservas para mostrar</p>';
+                pagosAdminCache = Array.isArray(data) ? data : [];
+                renderPagosAdmin();
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('pagosContainer').innerHTML = '<p>Error cargando pagos</p>';
             }
         }
 
-        async function editarPagoReserva(reservaId) {
-            const actual = pagosAdminCache.find(p => p.reserva_id === reservaId);
-            if (!actual) return;
-
-            const montoTotalInput = prompt('Monto total acordado', Number(actual.monto_a_pagar || 0));
-            if (montoTotalInput === null) return;
-            const montoPagadoInput = prompt('Monto pagado', Number(actual.monto_pagado || 0));
-            if (montoPagadoInput === null) return;
-            const notaInput = prompt('Nota de pago (opcional)', actual.nota_pago || '');
-            if (notaInput === null) return;
+        async function guardarPagoInline(reservaId) {
+            const monto_a_pagar = Number(document.getElementById(`pago-total-${reservaId}`).value || 0);
+            const monto_pagado = Number(document.getElementById(`pago-pagado-${reservaId}`).value || 0);
+            const nota_pago = (document.getElementById(`pago-nota-${reservaId}`).value || '').trim();
 
             try {
                 const res = await fetch(`/api/admin/pagos/${reservaId}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        monto_a_pagar: Number(montoTotalInput),
-                        monto_pagado: Number(montoPagadoInput),
-                        nota_pago: notaInput
-                    })
+                    body: JSON.stringify({ monto_a_pagar, monto_pagado, nota_pago })
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     alert(data.error || 'No se pudo actualizar el pago');
                     return;
                 }
-                alert('Pago actualizado');
                 cargarPagosAdmin();
             } catch (error) {
                 console.error('Error:', error);
@@ -587,31 +634,36 @@
             }
         }
 
-        async function enviarInstrucciones(reservaId) {
-            const canal = prompt('Canal de envío: whatsapp o email', 'whatsapp');
-            if (!canal) return;
-            const mensaje = prompt('Mensaje adicional (opcional)', '') || '';
+        async function enviarInstruccionesInline(reservaId) {
+            const canal = (document.getElementById(`canal-${reservaId}`).value || 'whatsapp').toLowerCase();
+            const mensaje = (document.getElementById(`mensaje-${reservaId}`).value || '').trim();
 
             try {
                 const res = await fetch(`/api/admin/instrucciones/enviar/${reservaId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ canal: canal.toLowerCase(), mensaje })
+                    body: JSON.stringify({ canal, mensaje })
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     alert(data.error || 'No se pudo generar el envío');
                     return;
                 }
-                if (data.url) {
-                    window.open(data.url, '_blank');
-                }
+                if (data.url) window.open(data.url, '_blank');
                 cargarPagosAdmin();
             } catch (error) {
                 console.error('Error:', error);
                 alert('Error enviando instrucciones');
             }
         }
+
+        document.getElementById('filtro-pago-estado').addEventListener('change', renderPagosAdmin);
+        document.getElementById('filtro-pago-busqueda').addEventListener('input', renderPagosAdmin);
+        document.getElementById('filtro-pago-limpiar').addEventListener('click', () => {
+            document.getElementById('filtro-pago-estado').value = 'todos';
+            document.getElementById('filtro-pago-busqueda').value = '';
+            renderPagosAdmin();
+        });
 
         // ========== DOCUMENTOS INSTRUCCIONES ==========
         async function cargarDocumentosInstrucciones() {

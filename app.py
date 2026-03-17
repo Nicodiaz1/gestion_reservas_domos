@@ -133,6 +133,24 @@ def asegurar_columnas():
             if 'tipo_check' not in columnas:
                 db.session.execute(text("ALTER TABLE reservas ADD COLUMN tipo_check VARCHAR(20) DEFAULT 'normal'"))
                 db.session.commit()
+
+        # Tabla de documentos de instrucciones y compatibilidad de columnas
+        if inspector.has_table('documentos_instrucciones'):
+            columnas_docs = [col['name'] for col in inspector.get_columns('documentos_instrucciones')]
+
+            # Compatibilidad: versiones anteriores usaban archivo_pdf
+            if 'archivo_url' not in columnas_docs:
+                db.session.execute(text("ALTER TABLE documentos_instrucciones ADD COLUMN archivo_url VARCHAR(500)"))
+                db.session.commit()
+
+                if 'archivo_pdf' in columnas_docs:
+                    db.session.execute(text("UPDATE documentos_instrucciones SET archivo_url = archivo_pdf WHERE archivo_url IS NULL"))
+                    db.session.commit()
+
+        # Tabla de pagos por reserva
+        if not inspector.has_table('reserva_pagos'):
+            db.create_all()
+            db.session.commit()
                 
     except Exception as e:
         db.session.rollback()
